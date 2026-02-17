@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Submission - MNC Software Positions</title>
+    <link rel="stylesheet" href="resume.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="wrapper">
+            <div class="header">
+                <h1>📄 Resume Submission</h1>
+                <p>Final step to complete your application</p>
+            </div>
+
+            <!-- Choice Screen -->
+            <div id="choiceScreen" class="choice-screen">
+                <h2>Do you have your resume ready?</h2>
+                <p class="subtitle">Choose one of the options below to proceed</p>
+
+                <div class="options-container">
+                    <button class="option-btn ready-btn" id="resumeReadyBtn">
+                        <div class="icon">📎</div>
+                        <h3>I Have My Resume</h3>
+                        <p>Upload your existing resume (PDF or DOCX)</p>
+                    </button>
+
+                    <button class="option-btn create-btn" id="createResumeBtn">
+                        <div class="icon">✍️</div>
+                        <h3>Let's Create One</h3>
+                        <p>Build your resume with our guided tool</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upload Screen -->
+            <div id="uploadScreen" class="upload-screen hidden">
+                <button class="back-btn" id="backBtn">← Back to options</button>
+
+                <div class="upload-container">
+                    <h2>Upload Your Resume</h2>
+                    <p class="subtitle">Drop your resume file here or click to browse</p>
+
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label for="userName">Your Full Name *</label>
+                            <input type="text" id="userName" name="userName" required placeholder="Enter your full name"
+                                minlength="2">
+                            <span class="error-message" id="name-error"></span>
+                        </div>
+
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <div class="upload-icon">📤</div>
+                            <p class="upload-text">Drag & drop your resume here</p>
+                            <p class="upload-subtext">or</p>
+                            <label for="resumeFile" class="browse-btn">Browse Files</label>
+                            <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx" hidden>
+                            <p class="file-info">Accepted formats: PDF, DOCX (Max 10MB)</p>
+                        </div>
+
+                        <div class="file-preview hidden" id="filePreview">
+                            <div class="file-details">
+                                <div class="file-icon">📄</div>
+                                <div class="file-info-text">
+                                    <p class="file-name" id="fileName"></p>
+                                    <p class="file-size" id="fileSize"></p>
+                                </div>
+                                <button type="button" class="remove-file" id="removeFileBtn">×</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            Upload Resume
+                        </button>
+
+                        <div class="message" id="message"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Success Screen -->
+            <div id="successScreen" class="success-screen hidden">
+                <div class="success-icon">✅</div>
+                <h2>Resume Uploaded Successfully!</h2>
+                <p class="success-message">Your application has been completed.</p>
+                <div class="success-details" id="successDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="resume.js"></script>
+</body>
+
+</html>
