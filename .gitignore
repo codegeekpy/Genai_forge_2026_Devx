@@ -10,5 +10,9 @@ __pycache__/
 .vscode/
 .idea/
 *.log
-
+# Python environment
 .job/
+
+# Environment variables
+.env
+.env.*
