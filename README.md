@@ -1,6 +1,6 @@
-# Job Application Form with PostgreSQL & Resume Upload
+# Job Application System with AI-Powered Career Recommendations
 
-A full-stack web application for collecting job applications from candidates with resume upload functionality and OCR text extraction capabilities.
+A full-stack web application for job applications with resume upload, OCR text extraction, and **intelligent career recommendations using RAG (Retrieval-Augmented Generation)**.
 
 ## Features
 
@@ -18,12 +18,27 @@ A full-stack web application for collecting job applications from candidates wit
 - CORS enabled for frontend integration
 - Resume file storage with OCR support
 
+✅ **AI-Powered LLM Extraction (Groq API)**
+- Cloud-based extraction (zero local RAM usage)
+- Structured data extraction from resumes
+- Extract: skills, experience, education, projects, certifications
+- Fast and free tier available
+
+✅ **RAG-Based Career Recommendations** 🆕
+- **Vector embeddings** using sentence-transformers (384-dim)
+- **Semantic skill matching** with pgvector similarity search
+- **Role recommendations** with match scores (0-100%)
+- **Upskilling suggestions** with learning time estimates
+- **Career progression paths** for advancement planning
+- **Knowledge base** of 34 IT job roles
+
 ✅ **PostgreSQL Databases**
 - Main database for applicant data (`job_applications`)
 - Document database for resume storage (`doc_db`)
 - Email uniqueness constraint
 - Timestamp tracking
-- OCR text storage (ready for future enablement)
+- OCR text storage
+- pgvector extension for embeddings
 
 ✅ **Resume Upload System**
 - PDF and DOCX file support
@@ -42,31 +57,38 @@ A full-stack web application for collecting job applications from candidates wit
 - Product Manager
 - UI/UX Designer
 - Quality Assurance Engineer
+... and 24 more roles in knowledge base
 
 ## Project Structure
 
 ```
-job-application-form/
+Genai_forge_2026_Devx/
 ├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── database.py          # PostgreSQL database operations
-│   ├── ocr_processor.py     # OCR text extraction module
-│   └── .env                 # Environment variables
+│   ├── main.py                  # FastAPI application with RAG endpoints
+│   ├── database.py              # PostgreSQL database operations
+│   ├── ocr_processor.py         # OCR text extraction module
+│   ├── groq_extractor.py        # Groq API LLM extraction
+│   ├── rag_engine.py            # RAG engine for recommendations 🆕
+│   └── .env                     # Environment variables
 ├── frontend/
-│   ├── index.html           # Application form
-│   ├── style.css            # Form styling
-│   ├── script.js            # Form logic
-│   ├── resume.html          # Resume upload page
-│   ├── resume.css           # Resume page styling
-│   └── resume.js            # Resume upload logic
+│   ├── index.html               # Application form
+│   ├── style.css                # Form styling
+│   ├── script.js                # Form logic
+│   ├── resume.html              # Resume upload page
+│   ├── resume.css               # Resume page styling
+│   └── resume.js                # Resume upload logic
 ├── database/
-│   ├── schema.sql           # Database schema
-│   ├── migrate_add_ocr.py   # OCR columns migration
-│   └── add_ocr_columns.sql  # SQL migration script
-├── requirements.txt         # Python dependencies
-├── install_ocr.sh          # OCR dependencies installer
-├── .env                    # Environment variables
-└── README.md               # This file
+│   ├── schema.sql               # Database schema
+│   ├── migrate_add_ocr.py       # OCR columns migration
+│   ├── add_ocr_columns.sql      # SQL migration script
+│   ├── migrate_pgvector_rag.py  # RAG system migration 🆕
+│   └── add_pgvector_rag.sql     # pgvector + RAG tables 🆕
+├── knowledge_base.json          # 34 IT roles with skills 🆕
+├── requirements.txt             # Python dependencies
+├── .env                         # Environment variables
+├── GROQ_SETUP.md               # Groq API setup guide
+├── RAG_SETUP.md                # RAG system setup guide 🆕
+└── README.md                    # This file
 ```
 
 ## Setup Instructions
@@ -228,6 +250,22 @@ Upload resume file (PDF or DOCX)
 - `file_uploaded_time` - TIMESTAMP
 - `ocr_text` - TEXT (extracted text from resume)
 - `ocr_processed_time` - TIMESTAMP (when OCR was performed)
+- `extracted_info` - JSONB (structured data from LLM) 🆕
+- `extraction_processed_time` - TIMESTAMP 🆕
+
+### role_embeddings table (doc_db database) 🆕
+- `id` - Serial primary key
+- `role_name` - VARCHAR(255) UNIQUE
+- `category` - VARCHAR(100)
+- `embedding` - VECTOR(384) (sentence-transformer embeddings)
+- `created_at` - TIMESTAMP
+
+### skill_recommendations table (doc_db database) 🆕
+- `id` - Serial primary key
+- `resume_id` - INTEGER (references resumes.id)
+- `recommended_roles` - JSONB (cached recommendations)
+- `created_at` - TIMESTAMP
+- `updated_at` - TIMESTAMP
 
 ## Enabling OCR (Optional)
 
@@ -315,13 +353,20 @@ This adds:
 - [x] Add resume/CV upload
 - [x] PostgreSQL database migration
 - [x] OCR text extraction (ready to enable)
+- [x] AI-powered LLM extraction (Groq API) 🆕
+- [x] RAG-based career recommendations 🆕
+- [x] Semantic skill matching 🆕
+- [x] Upskilling path suggestions 🆕
+- [x] Career progression planning 🆕
+- [ ] Frontend UI for recommendations
 - [ ] User authentication/login system
 - [ ] Implement bcrypt for password hashing
 - [ ] Email confirmation system
 - [ ] Admin dashboard for managing applications
 - [ ] Application status tracking
 - [ ] Export applicants to CSV/Excel
-- [ ] Full-text search on extracted resume text
+- [ ] Resume parsing improvements
+- [ ] Integration with job boards
 
 ## License
 
