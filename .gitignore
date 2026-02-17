@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 .env
 *.db
+.job
 .DS_Store
 .vscode/
 .idea/
