@@ -331,7 +331,7 @@ async def get_all_resumes():
                        ELSE NULL
                    END as ocr_preview,
                    CASE 
-                       WHEN ocr_text S NOT NULL THEN true
+                       WHEN ocr_text iS NOT NULL THEN true
                        ELSE false
                    END as has_ocr_text,
                    CASE 
