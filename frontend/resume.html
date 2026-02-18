@@ -4,92 +4,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Submission - MNC Software Positions</title>
+    <title>Resume Submission — TalentForge Recruitment Portal</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="resume.css">
 </head>
 
 <body>
-    <div class="container">
-        <div class="wrapper">
-            <div class="header">
-                <h1>📄 Resume Submission</h1>
+    <!-- Top Navigation Bar -->
+    <nav class="top-bar">
+        <div class="top-bar-inner">
+            <div class="brand">
+                <span class="brand-icon">&#9670;</span>
+                <span class="brand-name">TalentForge</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Apply</a></li>
+                <li><a href="resume.html" class="active">Resume</a></li>
+                <li><a href="course.html">Learning Paths</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="page-body">
+        <div class="container">
+            <div class="page-title-bar">
+                <h1>Resume Submission</h1>
                 <p>Final step to complete your application</p>
             </div>
 
-            <!-- Choice Screen -->
-            <div id="choiceScreen" class="choice-screen">
-                <h2>Do you have your resume ready?</h2>
-                <p class="subtitle">Choose one of the options below to proceed</p>
-
-                <div class="options-container">
-                    <button class="option-btn ready-btn" id="resumeReadyBtn">
-                        <div class="icon">📎</div>
-                        <h3>I Have My Resume</h3>
-                        <p>Upload your existing resume (PDF or DOCX)</p>
-                    </button>
-
-                    <button class="option-btn create-btn" id="createResumeBtn">
-                        <div class="icon">✍️</div>
-                        <h3>Let's Create One</h3>
-                        <p>Build your resume with our guided tool</p>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Upload Screen -->
-            <div id="uploadScreen" class="upload-screen hidden">
-                <button class="back-btn" id="backBtn">← Back to options</button>
-
-                <div class="upload-container">
+            <div class="content-card">
+                <div class="card-header">
                     <h2>Upload Your Resume</h2>
-                    <p class="subtitle">Drop your resume file here or click to browse</p>
-
-                    <form id="uploadForm">
-                        <div class="form-group">
-                            <label for="userName">Your Full Name *</label>
-                            <input type="text" id="userName" name="userName" required placeholder="Enter your full name"
-                                minlength="2">
-                            <span class="error-message" id="name-error"></span>
-                        </div>
-
-                        <div class="file-upload-area" id="fileUploadArea">
-                            <div class="upload-icon">📤</div>
-                            <p class="upload-text">Drag & drop your resume here</p>
-                            <p class="upload-subtext">or</p>
-                            <label for="resumeFile" class="browse-btn">Browse Files</label>
-                            <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx" hidden>
-                            <p class="file-info">Accepted formats: PDF, DOCX (Max 10MB)</p>
-                        </div>
-
-                        <div class="file-preview hidden" id="filePreview">
-                            <div class="file-details">
-                                <div class="file-icon">📄</div>
-                                <div class="file-info-text">
-                                    <p class="file-name" id="fileName"></p>
-                                    <p class="file-size" id="fileSize"></p>
-                                </div>
-                                <button type="button" class="remove-file" id="removeFileBtn">×</button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="submit-btn" id="submitBtn">
-                            Upload Resume
-                        </button>
-
-                        <div class="message" id="message"></div>
-                    </form>
+                    <span class="card-badge">Step 2 of 2</span>
                 </div>
-            </div>
 
-            <!-- Success Screen -->
-            <div id="successScreen" class="success-screen hidden">
-                <div class="success-icon">✅</div>
-                <h2>Resume Uploaded Successfully!</h2>
-                <p class="success-message">Your application has been completed.</p>
-                <div class="success-details" id="successDetails"></div>
+                <div class="card-body-inner">
+                    <!-- Choice Screen -->
+                    <div id="choiceScreen" class="choice-screen">
+                        <h3 class="choice-title">Do you have your resume ready?</h3>
+                        <p class="choice-subtitle">Choose one of the options below to proceed</p>
+
+                        <div class="options-row">
+                            <button class="option-card" id="resumeReadyBtn">
+                                <div class="option-icon">&#128206;</div>
+                                <h4>I Have My Resume</h4>
+                                <p>Upload your existing resume (PDF or DOCX)</p>
+                            </button>
+                            <button class="option-card" id="createResumeBtn">
+                                <div class="option-icon">&#9997;</div>
+                                <h4>Let's Create One</h4>
+                                <p>Build your resume with our guided tool</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Screen -->
+                    <div id="uploadScreen" class="upload-screen hidden">
+                        <button class="back-link" id="backBtn">&larr; Back to options</button>
+
+                        <form id="uploadForm">
+                            <div class="form-group">
+                                <label for="userName">Your Full Name <span class="required">*</span></label>
+                                <input type="text" id="userName" name="userName" required
+                                    placeholder="Enter your full name" minlength="2">
+                                <span class="error-message" id="name-error"></span>
+                            </div>
+
+                            <div class="file-upload-area" id="fileUploadArea">
+                                <div class="upload-icon-area">&#128228;</div>
+                                <p class="upload-text-main">Drag &amp; drop your resume here</p>
+                                <p class="upload-or">or</p>
+                                <label for="resumeFile" class="btn btn-secondary browse-btn-label">Browse Files</label>
+                                <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx" hidden>
+                                <p class="upload-formats">Accepted formats: PDF, DOCX (Max 10MB)</p>
+                            </div>
+
+                            <div class="file-preview hidden" id="filePreview">
+                                <div class="file-details-row">
+                                    <div class="file-icon-box">&#128196;</div>
+                                    <div class="file-info-text">
+                                        <p class="file-name-display" id="fileName"></p>
+                                        <p class="file-size-display" id="fileSize"></p>
+                                    </div>
+                                    <button type="button" class="remove-file-btn" id="removeFileBtn">&times;</button>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="submitBtn">Upload Resume</button>
+                            </div>
+
+                            <div class="message" id="message"></div>
+                        </form>
+                    </div>
+
+                    <!-- Success Screen -->
+                    <div id="successScreen" class="success-screen hidden">
+                        <div class="success-check">&#10004;</div>
+                        <h3>Resume Uploaded Successfully!</h3>
+                        <p class="success-subtitle">Your application has been completed.</p>
+                        <div class="success-details-box" id="successDetails"></div>
+                        <a href="course.html" class="btn btn-gold" style="margin-top:16px;">View Learning Paths
+                            &rarr;</a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p>&copy; 2026 TalentForge Recruitment Portal. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script src="resume.js"></script>
 </body>

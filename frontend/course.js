@@ -1,15 +1,14 @@
 /**
- * Course Generation Frontend
- * Fetches role recommendations and allows users to generate learning paths.
+ * Course Recommendations Frontend
+ * Fetches role recommendations and generates learning paths via Groq.
  */
 
 const API_BASE = "http://localhost:8000";
 
-// State
 let currentResumeId = null;
 let recommendationsData = null;
 
-// ───── Init ─────
+/* ───── Init ───── */
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const resumeId = params.get("resume_id");
@@ -22,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ───── Load Recommendations ─────
+/* ───── Load Recommendations ───── */
 async function loadRecommendations() {
     if (!currentResumeId) {
         const input = document.getElementById("resumeIdInput");
@@ -39,7 +38,9 @@ async function loadRecommendations() {
     showLoading();
 
     try {
-        const response = await fetch(`${API_BASE}/api/recommend-roles/${currentResumeId}?top_k=5`);
+        const response = await fetch(
+            `${API_BASE}/api/recommend-roles/${currentResumeId}?top_k=5`
+        );
 
         if (!response.ok) {
             const err = await response.json();
@@ -53,38 +54,33 @@ async function loadRecommendations() {
     }
 }
 
-// ───── Render Recommendations ─────
+/* ───── Render Recommendations ───── */
 function renderRecommendations(data) {
     hideAll();
 
-    // Show skills summary
+    // Skills summary
     const skillsSummary = document.getElementById("skillsSummary");
     const currentSkillsList = document.getElementById("currentSkillsList");
-
     const skills = data.candidate_skills || [];
     currentSkillsList.innerHTML = skills
-        .map(s => `<span class="skill-tag has">${escapeHtml(s)}</span>`)
+        .map((s) => `<span class="skill-tag has">${esc(s)}</span>`)
         .join("");
     skillsSummary.style.display = "block";
 
-    // Render role cards
+    // Role cards
     const roleCardsList = document.getElementById("roleCardsList");
     const recommendations = data.recommendations || [];
-
     roleCardsList.innerHTML = recommendations
-        .map((role, index) => renderRoleCard(role, index))
+        .map((role, i) => renderRoleCard(role, i))
         .join("");
-
     document.getElementById("roleCards").style.display = "block";
 }
 
 function renderRoleCard(role, index) {
     const rank = index + 1;
-    const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-    const medal = medals[index] || `#${rank}`;
     const matchScore = Math.round((role.match_score || 0) * 100);
-
-    const scoreClass = matchScore >= 70 ? "score-high" : matchScore >= 40 ? "score-mid" : "score-low";
+    const scoreClass =
+        matchScore >= 70 ? "high" : matchScore >= 40 ? "mid" : "low";
 
     const matchingSkills = role.matching_skills || [];
     const missingSkills = role.missing_skills || [];
@@ -93,64 +89,66 @@ function renderRoleCard(role, index) {
 
     return `
     <div class="role-card" id="role-card-${index}">
-        <div class="role-card-header">
-            <div class="role-info">
-                <div class="role-rank">${medal} Rank #${rank}</div>
-                <div class="role-name">${escapeHtml(roleName)}</div>
-                <div class="role-category">${escapeHtml(role.category || "")}</div>
+        <div class="role-card-top">
+            <div class="role-rank-strip">
+                <span>#${rank}</span>
+                <span class="role-rank-label">Rank</span>
             </div>
-            <div class="match-score">
-                <div class="score-circle ${scoreClass}">${matchScore}%</div>
-                <div class="score-label">Match</div>
+            <div class="role-info-area">
+                <div class="role-name-main">${esc(roleName)}</div>
+                <div class="role-category-text">${esc(role.category || "")}</div>
+            </div>
+            <div class="role-match-badge">
+                <div class="match-pct ${scoreClass}">${matchScore}%</div>
+                <div class="match-pct-label">Match</div>
             </div>
         </div>
 
-        <div class="role-skills">
-            ${matchingSkills.length > 0 ? `
-            <div class="role-skills-section">
-                <h4 class="match-label">✅ Matching Skills (${matchingSkills.length})</h4>
-                <div class="skill-tags">
-                    ${matchingSkills.map(s => `<span class="skill-tag has">${escapeHtml(s)}</span>`).join("")}
-                </div>
-            </div>
-            ` : ""}
-            ${missingSkills.length > 0 ? `
-            <div class="role-skills-section">
-                <h4 class="missing-label">❌ Skills to Learn (${missingSkills.length})</h4>
-                <div class="skill-tags">
-                    ${missingSkills.map(s => `<span class="skill-tag missing">${escapeHtml(s)}</span>`).join("")}
-                </div>
-            </div>
-            ` : ""}
+        <div class="role-skills-area">
+            ${matchingSkills.length > 0
+            ? `<div class="role-skills-row">
+                    <div class="skills-label match-lbl">Matching Skills (${matchingSkills.length})</div>
+                    <div class="skill-tag-list">${matchingSkills.map((s) => `<span class="skill-tag has">${esc(s)}</span>`).join("")}</div>
+                </div>`
+            : ""
+        }
+            ${missingSkills.length > 0
+            ? `<div class="role-skills-row">
+                    <div class="skills-label missing-lbl">Skills to Learn (${missingSkills.length})</div>
+                    <div class="skill-tag-list">${missingSkills.map((s) => `<span class="skill-tag missing">${esc(s)}</span>`).join("")}</div>
+                </div>`
+            : ""
+        }
         </div>
 
-        <div class="role-card-footer">
-            <div class="salary-info">
+        <div class="role-card-bottom">
+            <div class="salary-text">
                 ${salary.min && salary.max
-                    ? `💰 <strong>₹${salary.min} - ₹${salary.max} LPA</strong>`
-                    : ""}
+            ? `<strong>${salary.min} &ndash; ${salary.max} LPA</strong>`
+            : ""
+        }
             </div>
-            <button class="generate-course-btn" onclick="generateCourse(${index}, '${escapeAttr(roleName)}')" id="gen-btn-${index}">
-                <span class="btn-text">🎯 Generate Learning Path</span>
-                <span class="btn-loading-text">Generating...</span>
-                <span class="btn-spinner"></span>
+            <button class="gen-course-btn" id="gen-btn-${index}"
+                onclick="generateCourse(${index}, '${escAttr(roleName)}')">
+                <span class="btn-label">Generate Learning Path</span>
+                <span class="btn-loading-label">Generating...</span>
+                <span class="btn-spinner-sm"></span>
             </button>
         </div>
-
-        <div id="course-inline-${index}" class="course-inline" style="display:none;"></div>
     </div>`;
 }
 
-// ───── Generate Course ─────
+/* ───── Generate Course ───── */
 async function generateCourse(index, targetRole) {
     const btn = document.getElementById(`gen-btn-${index}`);
     btn.classList.add("loading");
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${API_BASE}/api/generate-course/${currentResumeId}?target_role=${encodeURIComponent(targetRole)}`, {
-            method: "POST",
-        });
+        const response = await fetch(
+            `${API_BASE}/api/generate-course/${currentResumeId}?target_role=${encodeURIComponent(targetRole)}`,
+            { method: "POST" }
+        );
 
         if (!response.ok) {
             const err = await response.json();
@@ -158,7 +156,7 @@ async function generateCourse(index, targetRole) {
         }
 
         const data = await response.json();
-        showCourseModal(data, targetRole);
+        showCourseDialog(data, targetRole);
     } catch (error) {
         alert("Error: " + error.message);
     } finally {
@@ -167,38 +165,35 @@ async function generateCourse(index, targetRole) {
     }
 }
 
-// ───── Show Course Modal ─────
-function showCourseModal(data, targetRole) {
+/* ───── Course Dialog ───── */
+function showCourseDialog(data, targetRole) {
     const overlay = document.getElementById("courseOverlay");
     const content = document.getElementById("courseContent");
+    const title = document.getElementById("courseDialogTitle");
     const course = data.course || {};
 
+    title.textContent = course.title || `Learning Path: ${targetRole}`;
+
     content.innerHTML = `
-        <div class="course-header">
-            <h2>📚 ${escapeHtml(course.title || `Learning Path for ${targetRole}`)}</h2>
-            <p>${escapeHtml(course.description || "")}</p>
-            <div class="course-meta">
-                <span class="meta-badge">🎯 ${escapeHtml(targetRole)}</span>
-                <span class="meta-badge">📅 ${course.estimated_weeks || course.weeks?.length || 0} Weeks</span>
-                ${(data.current_skills || []).length > 0
+        <p class="course-desc">${esc(course.description || "")}</p>
 
-                    ? `<span class="meta-badge">✅ ${data.current_skills.length} Current Skills</span>` : ""}
-                ${(data.missing_skills || []).length > 0
-                    ? `<span class="meta-badge">📖 ${data.missing_skills.length} Skills to Learn</span>` : ""}
-            </div>
+        <div class="course-meta-row">
+            <span class="meta-pill">Target: ${esc(targetRole)}</span>
+            <span class="meta-pill">${course.estimated_weeks || course.weeks?.length || 0} Weeks</span>
+            ${(data.current_skills || []).length > 0 ? `<span class="meta-pill">${data.current_skills.length} Current Skills</span>` : ""}
+            ${(data.missing_skills || []).length > 0 ? `<span class="meta-pill">${data.missing_skills.length} Skills to Learn</span>` : ""}
         </div>
 
-        ${course.prerequisites && course.prerequisites.length > 0 ? `
-        <div style="margin-bottom: 20px;">
-            <h4 style="color: #fbbf24; font-size: 0.85rem; margin-bottom: 8px;">📋 Prerequisites</h4>
-            <div class="skill-tags">
-                ${course.prerequisites.map(p => `<span class="concept-tag">${escapeHtml(p)}</span>`).join("")}
-            </div>
-        </div>
-        ` : ""}
+        ${course.prerequisites && course.prerequisites.length > 0
+            ? `<div class="prereq-section">
+                    <h4>Prerequisites</h4>
+                    <div class="skill-tag-list">${course.prerequisites.map((p) => `<span class="concept-chip">${esc(p)}</span>`).join("")}</div>
+                </div>`
+            : ""
+        }
 
-        <div class="weeks-container">
-            ${(course.weeks || []).map((week, i) => renderWeekCard(week, i, targetRole)).join("")}
+        <div class="weeks-list">
+            ${(course.weeks || []).map((w, i) => renderWeekRow(w, i, targetRole)).join("")}
         </div>
     `;
 
@@ -211,52 +206,52 @@ function closeCourse() {
     document.body.style.overflow = "";
 }
 
-// ───── Week Card ─────
-function renderWeekCard(week, index, targetRole) {
-    const focusClass = `focus-${(week.focus || "theory").toLowerCase()}`;
+/* ───── Week Row ───── */
+function renderWeekRow(week, index, targetRole) {
+    const focusMap = {
+        theory: "tag-theory",
+        practice: "tag-practice",
+        project: "tag-project",
+        review: "tag-review",
+    };
+    const focusClass = focusMap[(week.focus || "theory").toLowerCase()] || "tag-theory";
     const concepts = week.concepts || [];
 
     return `
-    <div class="week-card" id="week-${index}">
-        <div class="week-header" onclick="toggleWeek(${index}, '${escapeAttr(week.title || "")}', '${escapeAttr(JSON.stringify(concepts))}', '${escapeAttr(targetRole)}')">
-            <div class="week-header-left">
-                <div class="week-number">${week.week || index + 1}</div>
-                <div class="week-title">${escapeHtml(week.title || `Week ${index + 1}`)}</div>
-            </div>
-            <div class="week-header-right">
-                <span class="week-focus ${focusClass}">${escapeHtml(week.focus || "theory")}</span>
-                <span class="expand-icon">▼</span>
-            </div>
+    <div class="week-row" id="week-${index}">
+        <div class="week-row-header"
+            onclick="toggleWeek(${index}, '${escAttr(week.title || "")}', '${escAttr(JSON.stringify(concepts))}', '${escAttr(targetRole)}')">
+            <div class="week-num">${week.week || index + 1}</div>
+            <div class="week-row-title">${esc(week.title || `Week ${index + 1}`)}</div>
+            <span class="week-focus-tag ${focusClass}">${esc(week.focus || "theory")}</span>
+            <span class="week-expand-arrow">&#9660;</span>
         </div>
-        ${concepts.length > 0 ? `
-        <div class="week-concepts">
-            ${concepts.map(c => `<span class="concept-tag">${escapeHtml(c)}</span>`).join("")}
-        </div>
-        ` : ""}
-        <div class="week-details" id="week-details-${index}"></div>
+        ${concepts.length > 0
+            ? `<div class="week-concepts-row">${concepts.map((c) => `<span class="concept-chip">${esc(c)}</span>`).join("")}</div>`
+            : ""
+        }
+        <div class="week-details-area" id="week-details-${index}"></div>
     </div>`;
 }
 
-// Toggle Week
 async function toggleWeek(index, weekTitle, conceptsJson, targetRole) {
-    const card = document.getElementById(`week-${index}`);
+    const row = document.getElementById(`week-${index}`);
     const details = document.getElementById(`week-details-${index}`);
 
-    if (card.classList.contains("expanded")) {
-        card.classList.remove("expanded");
+    if (row.classList.contains("expanded")) {
+        row.classList.remove("expanded");
         return;
     }
 
-    card.classList.add("expanded");
+    row.classList.add("expanded");
 
-    // If already loaded, just show
     if (details.dataset.loaded === "true") return;
 
-    details.innerHTML = `<div class="week-details-loading"><div class="spinner" style="width:24px;height:24px;margin:0 auto 8px;"></div>Loading daily breakdown...</div>`;
+    details.innerHTML = `<div class="week-loading"><div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 8px;"></div>Loading daily breakdown...</div>`;
 
     try {
         let concepts = [];
-        try { concepts = JSON.parse(conceptsJson); } catch(e) {}
+        try { concepts = JSON.parse(conceptsJson); } catch (e) { }
 
         const response = await fetch(`${API_BASE}/api/generate-course-week`, {
             method: "POST",
@@ -275,46 +270,52 @@ async function toggleWeek(index, weekTitle, conceptsJson, targetRole) {
         const days = data.days || [];
 
         details.innerHTML = days
-            .map((day, i) => renderDayCard(day, index, i, targetRole))
+            .map((day, i) => renderDayRow(day, index, i, targetRole))
             .join("");
-
         details.dataset.loaded = "true";
     } catch (error) {
-        details.innerHTML = `<div class="week-details-loading" style="color: #fb7185;">⚠️ ${error.message}</div>`;
+        details.innerHTML = `<div class="week-loading" style="color:#a8201a;">${error.message}</div>`;
     }
 }
 
-// ───── Day Card ─────
-function renderDayCard(day, weekIndex, dayIndex, targetRole) {
-    const typeClass = `focus-${(day.task_type || "theory").toLowerCase()}`;
+/* ───── Day Row ───── */
+function renderDayRow(day, weekIndex, dayIndex, targetRole) {
+    const focusMap = {
+        theory: "tag-theory",
+        practice: "tag-practice",
+        project: "tag-project",
+        review: "tag-review",
+    };
+    const typeClass = focusMap[(day.task_type || "theory").toLowerCase()] || "tag-theory";
+
     return `
-    <div class="day-card" id="day-${weekIndex}-${dayIndex}">
-        <div class="day-header" onclick="toggleDay(${weekIndex}, ${dayIndex}, '${escapeAttr(day.title || "")}', ${day.day || dayIndex + 1}, '${escapeAttr(day.task_type || "theory")}', ${day.duration_minutes || 60}, '${escapeAttr(targetRole)}')">
-            <span class="day-title">Day ${day.day || dayIndex + 1}: ${escapeHtml(day.title || "")}</span>
-            <div class="day-meta">
-                <span class="day-type ${typeClass}">${escapeHtml(day.task_type || "theory")}</span>
-                <span class="day-duration">${day.duration_minutes || 60} min</span>
+    <div class="day-row" id="day-${weekIndex}-${dayIndex}">
+        <div class="day-row-header"
+            onclick="toggleDay(${weekIndex}, ${dayIndex}, '${escAttr(day.title || "")}', ${day.day || dayIndex + 1}, '${escAttr(day.task_type || "theory")}', ${day.duration_minutes || 60}, '${escAttr(targetRole)}')">
+            <span class="day-title-text">Day ${day.day || dayIndex + 1}: ${esc(day.title || "")}</span>
+            <div class="day-tags">
+                <span class="day-type-tag ${typeClass}">${esc(day.task_type || "theory")}</span>
+                <span class="day-dur">${day.duration_minutes || 60} min</span>
             </div>
         </div>
-        <div class="day-detail" id="day-detail-${weekIndex}-${dayIndex}"></div>
+        <div class="day-detail-area" id="day-detail-${weekIndex}-${dayIndex}"></div>
     </div>`;
 }
 
-// Toggle Day
 async function toggleDay(weekIndex, dayIndex, dayTitle, dayNumber, taskType, duration, targetRole) {
-    const card = document.getElementById(`day-${weekIndex}-${dayIndex}`);
+    const row = document.getElementById(`day-${weekIndex}-${dayIndex}`);
     const detail = document.getElementById(`day-detail-${weekIndex}-${dayIndex}`);
 
-    if (card.classList.contains("expanded")) {
-        card.classList.remove("expanded");
+    if (row.classList.contains("expanded")) {
+        row.classList.remove("expanded");
         return;
     }
 
-    card.classList.add("expanded");
+    row.classList.add("expanded");
 
     if (detail.dataset.loaded === "true") return;
 
-    detail.innerHTML = `<div class="week-details-loading"><div class="spinner" style="width:20px;height:20px;margin:0 auto 6px;"></div>Loading content...</div>`;
+    detail.innerHTML = `<div class="week-loading" style="padding:16px;"><div class="loading-spinner" style="width:20px;height:20px;margin:0 auto 6px;"></div>Loading content...</div>`;
     detail.style.display = "block";
 
     try {
@@ -336,7 +337,7 @@ async function toggleDay(weekIndex, dayIndex, dayTitle, dayNumber, taskType, dur
         detail.innerHTML = renderDayDetail(data);
         detail.dataset.loaded = "true";
     } catch (error) {
-        detail.innerHTML = `<div class="week-details-loading" style="color: #fb7185;">⚠️ ${error.message}</div>`;
+        detail.innerHTML = `<div class="week-loading" style="color:#a8201a;padding:16px;">${error.message}</div>`;
     }
 }
 
@@ -345,33 +346,38 @@ function renderDayDetail(data) {
     const resources = data.resources || [];
 
     return `
-        <p class="day-description">${escapeHtml(data.description || "")}</p>
+        <p class="day-desc">${esc(data.description || "")}</p>
 
-        ${toc.length > 0 ? `
-        <div class="day-toc">
-            <h5>Topics Covered</h5>
-            <ul>${toc.map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
-        </div>
-        ` : ""}
+        ${toc.length > 0
+            ? `<div class="day-toc-section">
+                    <h5>Topics Covered</h5>
+                    <ul>${toc.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+                </div>`
+            : ""
+        }
 
-        ${resources.length > 0 ? `
-        <div class="day-resources">
-            <h5>📚 Resources</h5>
-            ${resources.map(r => `
-                <a href="${escapeAttr(r.url || "#")}" target="_blank" rel="noopener" class="resource-link">
-                    ${r.thumbnail ? `<img src="${escapeAttr(r.thumbnail)}" class="resource-thumb" onerror="this.style.display='none'">` : ""}
-                    <div class="resource-info">
-                        <div class="resource-title">${escapeHtml(r.title || "Resource")}</div>
-                        <div class="resource-source ${r.source || "web"}">${r.source === "youtube" ? "▶ YouTube" : "🌐 Web Article"}</div>
-                    </div>
-                </a>
-            `).join("")}
-        </div>
-        ` : ""}
+        ${resources.length > 0
+            ? `<div class="resources-section">
+                    <h5>Resources</h5>
+                    ${resources
+                .map(
+                    (r) => `
+                        <a href="${escAttr(r.url || "#")}" target="_blank" rel="noopener" class="resource-row">
+                            ${r.thumbnail ? `<img src="${escAttr(r.thumbnail)}" class="resource-thumb-img" onerror="this.style.display='none'">` : ""}
+                            <div class="resource-info-box">
+                                <div class="resource-title-text">${esc(r.title || "Resource")}</div>
+                                <div class="resource-src ${r.source === "youtube" ? "yt" : "web"}">${r.source === "youtube" ? "YouTube" : "Web Article"}</div>
+                            </div>
+                        </a>`
+                )
+                .join("")}
+                </div>`
+            : ""
+        }
     `;
 }
 
-// ───── UI Helpers ─────
+/* ───── UI Helpers ───── */
 function showLoading() {
     hideAll();
     document.getElementById("loadingState").style.display = "block";
@@ -396,14 +402,14 @@ function hideAll() {
     document.getElementById("roleCards").style.display = "none";
 }
 
-function escapeHtml(text) {
+function esc(text) {
     if (!text) return "";
     const div = document.createElement("div");
     div.textContent = String(text);
     return div.innerHTML;
 }
 
-function escapeAttr(text) {
+function escAttr(text) {
     if (!text) return "";
     return String(text)
         .replace(/&/g, "&amp;")
