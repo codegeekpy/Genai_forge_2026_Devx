@@ -269,6 +269,47 @@ async def upload_resume(
             if ocr_success and ocr_text:
                 response_data["ocr_preview"] = ocr_text[:200] + "..." if len(ocr_text) > 200 else ocr_text
             
+            # ── Auto AI Extraction ──
+            # If OCR succeeded, automatically extract structured info via Groq
+            if ocr_success and ocr_text:
+                try:
+                    print(f"[API] Auto-extracting structured info for resume {resume_id}...")
+                    ext_success, extracted_data, ext_message = llm_extractor.extract_information(
+                        ocr_text=ocr_text
+                    )
+                    
+                    if ext_success and extracted_data:
+                        # Save extracted data to database
+                        db_ok, db_msg = doc_db.update_extracted_info(
+                            resume_id=resume_id,
+                            extracted_json=extracted_data
+                        )
+                        
+                        if db_ok:
+                            response_data["ai_extracted"] = True
+                            response_data["ai_extraction_message"] = "Structured data extracted automatically"
+                            response_data["extracted_preview"] = {
+                                "name": extracted_data.get("name", ""),
+                                "email": extracted_data.get("email", ""),
+                                "skills_count": len(extracted_data.get("skills", [])),
+                                "experience_count": len(extracted_data.get("experience", [])),
+                            }
+                            print(f"[API] ✅ Auto-extraction complete for resume {resume_id}")
+                        else:
+                            response_data["ai_extracted"] = False
+                            response_data["ai_extraction_message"] = f"Extraction succeeded but save failed: {db_msg}"
+                            print(f"[API] ⚠️ Auto-extraction save failed: {db_msg}")
+                    else:
+                        response_data["ai_extracted"] = False
+                        response_data["ai_extraction_message"] = f"Extraction skipped: {ext_message}"
+                        print(f"[API] ⚠️ Auto-extraction failed: {ext_message}")
+                        
+                except Exception as ext_err:
+                    # Non-fatal: upload still succeeds even if extraction fails
+                    response_data["ai_extracted"] = False
+                    response_data["ai_extraction_message"] = f"Auto-extraction error: {str(ext_err)}"
+                    print(f"[API] ⚠️ Auto-extraction error: {str(ext_err)}")
+            
             return response_data
         else:
             raise HTTPException(status_code=500, detail=message)

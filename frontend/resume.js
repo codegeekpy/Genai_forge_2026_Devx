@@ -197,11 +197,40 @@ function showSuccessScreen(data) {
     successScreen.classList.remove('hidden');
 
     const successDetails = document.getElementById('successDetails');
+
+    let extractionHtml = '';
+    if (data.ai_extracted) {
+        const preview = data.extracted_preview || {};
+        extractionHtml = `
+            <p><strong>AI Extraction:</strong> <span style="color:#1a7a3a;">&#10004; Complete</span></p>
+            <p><strong>Skills Found:</strong> ${preview.skills_count || 0}</p>
+            <p><strong>Experience Entries:</strong> ${preview.experience_count || 0}</p>
+        `;
+    } else if (data.ai_extraction_message) {
+        extractionHtml = `
+            <p><strong>AI Extraction:</strong> <span style="color:#b8860b;">Pending</span></p>
+            <p style="font-size:0.82rem;color:#5a5a5a;">${data.ai_extraction_message}</p>
+        `;
+    }
+
     successDetails.innerHTML = `
         <p><strong>Name:</strong> ${userNameInput.value}</p>
         <p><strong>File Name:</strong> ${data.file_name}</p>
         <p><strong>File Type:</strong> ${data.file_type.toUpperCase()}</p>
         <p><strong>Resume ID:</strong> ${data.resume_id}</p>
-        <p><strong>Status:</strong> Successfully stored in database</p>
+        <p><strong>OCR:</strong> ${data.ocr_processed ? '<span style="color:#1a7a3a;">&#10004; Processed</span>' : '<span style="color:#a8201a;">Not available</span>'}</p>
+        ${extractionHtml}
     `;
+
+    // Auto-redirect to recommendations page after 3 seconds
+    if (data.resume_id) {
+        const redirectMsg = document.createElement('p');
+        redirectMsg.style.cssText = 'margin-top:12px;color:#0e6b5e;font-weight:600;font-size:0.9rem;';
+        redirectMsg.textContent = 'Redirecting to Career Recommendations in 3 seconds...';
+        successDetails.appendChild(redirectMsg);
+
+        setTimeout(() => {
+            window.location.href = `course.html?resume_id=${data.resume_id}`;
+        }, 3000);
+    }
 }
