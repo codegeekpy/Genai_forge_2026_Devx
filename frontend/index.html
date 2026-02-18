@@ -4,112 +4,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application — TalentForge Recruitment Portal</title>
+    <title>TalentForge — AI-Powered Career Recommendations</title>
+    <meta name="description"
+        content="Upload your resume, discover your ideal career roles, and get personalized learning paths — all powered by AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
-        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Source+Sans+Pro:wght@400;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="hero.css">
 </head>
 
 <body>
-    <!-- Top Navigation Bar -->
-    <nav class="top-bar">
-        <div class="top-bar-inner">
-            <div class="brand">
-                <span class="brand-icon">&#9670;</span>
-                <span class="brand-name">TalentForge</span>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <span class="brand-icon">◆</span>
+                <span class="brand-text">TalentForge</span>
             </div>
-            <ul class="nav-links">
-                <li><a href="index.html" class="active">Apply</a></li>
-                <li><a href="resume.html">Resume</a></li>
-                <li><a href="course.html">Learning Paths</a></li>
-            </ul>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how">How It Works</a>
+                <a href="auth.html">Sign In</a>
+            </div>
         </div>
     </nav>
 
-    <main class="page-body">
-        <div class="container">
-            <!-- Page Title Section -->
-            <div class="page-title-bar">
-                <h1>Job Application</h1>
-                <p>Apply for software positions at leading multinational companies</p>
+    <!-- ═══ Hero Banner ═══ -->
+    <section class="hero-banner">
+        <div class="hero-inner">
+            <div class="hero-badge">AI-Powered Career Intelligence</div>
+            <h1>Discover the <span class="highlight">Career Roles</span> Built for Your Skills</h1>
+            <p class="hero-sub">
+                Upload your resume. Our AI analyzes your skills, matches you to the best roles,
+                and builds a personalized learning path to get you there.
+            </p>
+            <a href="auth.html" class="hero-cta">Get Started — It's Free</a>
+            <a href="#features" class="hero-cta-secondary">See Features ↓</a>
+        </div>
+    </section>
+
+    <!-- ═══ Features ═══ -->
+    <section class="features-section" id="features">
+        <h2 class="section-title">Everything You Need to Accelerate Your Career</h2>
+        <p class="section-subtitle">From resume analysis to learning paths — TalentForge handles it all with
+            cutting-edge AI.</p>
+
+        <div class="features-grid">
+
+            <div class="feature-card">
+                <div class="f-icon blue">🔍</div>
+                <h3>AI Resume Analysis</h3>
+                <p>Advanced OCR extracts text from any PDF or DOCX, then our Groq-powered LLM identifies your skills,
+                    experience, and education automatically.</p>
             </div>
 
-            <div class="content-card">
-                <div class="card-header">
-                    <h2>Candidate Information</h2>
-                    <span class="card-badge">Step 1 of 2</span>
-                </div>
-
-                <form id="applicationForm" class="form-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="name">Full Name <span class="required">*</span></label>
-                            <input type="text" id="name" name="name" required placeholder="Enter your full name"
-                                minlength="2">
-                            <span class="error-message" id="name-error"></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address <span class="required">*</span></label>
-                            <input type="email" id="email" name="email" required placeholder="your.email@example.com">
-                            <span class="error-message" id="email-error"></span>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">Password <span class="required">*</span></label>
-                            <input type="password" id="password" name="password" required placeholder="Min 6 characters"
-                                minlength="6">
-                            <span class="error-message" id="password-error"></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm_password">Confirm Password <span class="required">*</span></label>
-                            <input type="password" id="confirm_password" name="confirm_password" required
-                                placeholder="Re-enter your password" minlength="6">
-                            <span class="error-message" id="confirm_password-error"></span>
-                        </div>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label>Preferred Job Roles <span class="required">*</span> <span class="hint">(Select all that
-                                apply)</span></label>
-                        <div class="checkbox-grid" id="job_roles_grid">
-                            <!-- Checkboxes populated by JS -->
-                        </div>
-                        <span class="error-message" id="job_roles-error"></span>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            Submit Application
-                        </button>
-                    </div>
-
-                    <div class="message" id="message"></div>
-                </form>
+            <div class="feature-card">
+                <div class="f-icon green">🎯</div>
+                <h3>Smart Role Matching</h3>
+                <p>Our RAG engine compares your skills against 50+ career roles using vector similarity, giving you a
+                    ranked list of your best-fit positions.</p>
             </div>
 
-            <!-- Info Banner -->
-            <div class="info-banner">
-                <div class="info-banner-icon">&#9733;</div>
-                <div class="info-banner-content">
-                    <h3>Available Positions</h3>
-                    <p>We're recruiting for various software engineering roles at top MNCs including Google, Microsoft,
-                        Amazon, Meta, and more.</p>
-                </div>
+            <div class="feature-card">
+                <div class="f-icon gold">📚</div>
+                <h3>Personalized Learning Paths</h3>
+                <p>Get a week-by-week upskilling plan for any target role — complete with free resources, exercises, and
+                    projects curated by AI.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="f-icon purple">📈</div>
+                <h3>Resume Ready Score</h3>
+                <p>See exactly how market-ready your profile is with a data-driven score based on skill overlap analysis
+                    across your top matched roles.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="f-icon red">🧠</div>
+                <h3>Ask AI Assistant</h3>
+                <p>Get mock interview prep, company-specific drive guidance, and personalized career advice from your AI
+                    career coach.</p>
+                <span class="f-badge">Coming Soon</span>
+            </div>
+
+            <div class="feature-card">
+                <div class="f-icon teal">🔐</div>
+                <h3>Secure Profile</h3>
+                <p>Your account keeps all your resumes, recommendations, and learning progress in one place. Pick up
+                    right where you left off.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ═══ How It Works ═══ -->
+    <section class="how-section" id="how">
+        <h2 class="section-title">How It Works</h2>
+
+        <div class="steps-row">
+            <div class="step">
+                <div class="step-num">1</div>
+                <span class="step-icon">📄</span>
+                <h4>Upload Your Resume</h4>
+                <p>Drop your PDF or DOCX. Our OCR + AI extracts skills, experience, and education in seconds.</p>
+            </div>
+
+            <div class="step-arrow">→</div>
+
+            <div class="step">
+                <div class="step-num">2</div>
+                <span class="step-icon">🎯</span>
+                <h4>Get Matched Roles</h4>
+                <p>Our RAG engine finds your top 5 best-fit career roles with match scores and gap analysis.</p>
+            </div>
+
+            <div class="step-arrow">→</div>
+
+            <div class="step">
+                <div class="step-num">3</div>
+                <span class="step-icon">🚀</span>
+                <h4>Start Learning</h4>
+                <p>Pick a role and receive a week-by-week personalized course with free resources to close skill gaps.
+                </p>
             </div>
         </div>
-    </main>
+    </section>
+
+    <!-- ═══ Bottom CTA ═══ -->
+    <section class="cta-section">
+        <h2>Ready to Find Your Perfect Career Path?</h2>
+        <p>Join TalentForge and let AI guide your next career move.</p>
+        <a href="auth.html" class="hero-cta">Create Free Account</a>
+    </section>
 
     <!-- Footer -->
-    <footer class="site-footer">
+    <footer class="page-footer">
         <div class="footer-inner">
-            <p>&copy; 2026 TalentForge Recruitment Portal. All rights reserved.</p>
+            <span>© 2026 TalentForge — AI-Powered Career Recommendations</span>
         </div>
     </footer>
 
-    <script src="script.js"></script>
 </body>
 
 </html>

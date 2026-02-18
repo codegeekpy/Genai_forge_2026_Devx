@@ -134,6 +134,87 @@ async def root():
         "docs": "/docs"
     }
 
+
+# ── Authentication Endpoints ──
+
+class SignupRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v):
+        if len(v.strip()) < 2:
+            raise ValueError('Username must be at least 2 characters')
+        return v.strip()
+
+    @field_validator('password')
+    @classmethod
+    def validate_signup_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters')
+        return v
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@app.post("/api/auth/signup", tags=["Authentication"], summary="Create Account")
+async def signup(req: SignupRequest):
+    """Register a new user account."""
+    password_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    success, user_data, message = doc_db.create_user(
+        username=req.username,
+        email=req.email,
+        password_hash=password_hash
+    )
+    if success:
+        return {"status": "success", "message": message, "user": user_data}
+    else:
+        raise HTTPException(status_code=400, detail=message)
+
+
+@app.post("/api/auth/login", tags=["Authentication"], summary="Login")
+async def login(req: LoginRequest):
+    """Authenticate user and return profile + resume status."""
+    user = doc_db.get_user_by_email(req.email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    password_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    if user['password'] != password_hash:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Check if user has resumes (returning user indicator)
+    resumes = doc_db.get_user_resumes(user['id'])
+
+    return {
+        "status": "success",
+        "user": {
+            "id": user['id'],
+            "username": user['username'],
+            "email": user['email'],
+            "created_at": str(user['created_at'])
+        },
+        "has_resumes": len(resumes) > 0,
+        "resume_count": len(resumes),
+        "resumes": resumes
+    }
+
+
+@app.get("/api/user/{user_id}/resumes", tags=["Authentication"], summary="Get User Resumes")
+async def get_user_resumes(user_id: int):
+    """Get all resumes linked to a user."""
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    resumes = doc_db.get_user_resumes(user_id)
+    return {"user": user, "resumes": resumes}
+
+
 @app.get("/api/options", tags=["Job Application"])
 async def get_options():
     """Get available job role options for application form"""
@@ -203,13 +284,15 @@ async def delete_applicant(applicant_id: int):
 @app.post("/api/upload-resume", tags=["Resume Management"], summary="Upload Resume with OCR")
 async def upload_resume(
     user_name: str = Form(...),
-    resume: UploadFile = File(...)
+    resume: UploadFile = File(...),
+    user_id: int = Form(None)
 ):
     """
     Upload a resume file and automatically extract text using OCR.
     
     - **user_name**: Name associated with the resume
     - **resume**: PDF or DOCX file (max 10MB)
+    - **user_id**: Optional user ID to link resume to authenticated user
     
     Returns resume ID, OCR status, and text preview.
     """
@@ -251,7 +334,8 @@ async def upload_resume(
             user_name=user_name,
             file_data=file_content,
             file_type=file_extension,
-            ocr_text=ocr_text if ocr_success else None
+            ocr_text=ocr_text if ocr_success else None,
+            user_id=user_id
         )
         
         if success:

@@ -163,6 +163,14 @@ async function handleFormSubmit(e) {
     formData.append('user_name', userName);
     formData.append('resume', selectedFile);
 
+    // Attach user_id if logged in
+    try {
+        const tfUser = JSON.parse(localStorage.getItem('tf_user'));
+        if (tfUser && tfUser.id) {
+            formData.append('user_id', tfUser.id);
+        }
+    } catch (e) { }
+
     try {
         const response = await fetch(`${API_URL}/api/upload-resume`, {
             method: 'POST',
