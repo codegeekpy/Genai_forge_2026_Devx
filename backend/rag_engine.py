@@ -46,7 +46,46 @@ class RAGEngine:
         self.db_port = os.getenv('DOC_DB_PORT', '5432')
         
         print(f"[RAG] Loaded {len(self.knowledge_base.get('roles', []))} roles from knowledge base")
+        
+        # Initialize database tables
+        self._setup_database()
+        
         print("[RAG] RAG Engine initialized successfully")
+    
+    def _setup_database(self):
+        """Create necessary database tables if they don't exist"""
+        try:
+            conn = self._get_db_connection()
+            cursor = conn.cursor()
+            
+            # Check if pgvector is available
+            cursor.execute("SELECT 1 FROM pg_available_extensions WHERE name = 'vector' AND installed_version IS NOT NULL")
+            self.use_pgvector = cursor.fetchone() is not None
+            
+            if self.use_pgvector:
+                print("[RAG] Using pgvector for semantic search")
+                cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
+                embedding_type = "vector(384)"
+            else:
+                print("[RAG] pgvector not found, using standard float8[] arrays and Python matching")
+                embedding_type = "float8[]"
+            
+            # Create role_embeddings table
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS role_embeddings (
+                    id SERIAL PRIMARY KEY,
+                    role_name VARCHAR(255) UNIQUE NOT NULL,
+                    category VARCHAR(100),
+                    embedding {embedding_type},
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"[RAG] Error setting up database: {str(e)}")
     
     def _load_knowledge_base(self) -> Dict:
         """Load knowledge base from JSON file"""
@@ -180,19 +219,54 @@ class RAGEngine:
             
             # Query database for similar roles
             conn = self._get_db_connection()
-            cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
             
-            cursor.execute("""
-                SELECT 
-                    role_name,
-                    category,
-                    1 - (embedding <=> %s::vector) AS similarity_score
-                FROM role_embeddings
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-            """, (candidate_embedding, candidate_embedding, top_k))
+            if hasattr(self, 'use_pgvector') and self.use_pgvector:
+                cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+                cursor.execute("""
+                    SELECT 
+                        role_name,
+                        category,
+                        1 - (embedding <=> %s::vector) AS similarity_score
+                    FROM role_embeddings
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                """, (candidate_embedding, candidate_embedding, top_k))
+                results = cursor.fetchall()
+            else:
+                # Fallback: Fetch all and match in Python
+                cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+                cursor.execute("SELECT role_name, category, embedding FROM role_embeddings")
+                db_roles = cursor.fetchall()
+                
+                # Calculate cosine similarity manually
+                matches_with_scores = []
+                v1 = np.array(candidate_embedding)
+                
+                for role in db_roles:
+                    if not role['embedding']:
+                        continue
+                        
+                    v2 = np.array(role['embedding'])
+                    # Cosine similarity formula: (A . B) / (||A|| * ||B||)
+                    dot_product = np.dot(v1, v2)
+                    norm_v1 = np.linalg.norm(v1)
+                    norm_v2 = np.linalg.norm(v2)
+                    
+                    if norm_v1 > 0 and norm_v2 > 0:
+                        similarity = dot_product / (norm_v1 * norm_v2)
+                    else:
+                        similarity = 0
+                        
+                    matches_with_scores.append({
+                        'role_name': role['role_name'],
+                        'category': role['category'],
+                        'similarity_score': float(similarity)
+                    })
+                
+                # Sort by similarity score descending
+                matches_with_scores.sort(key=lambda x: x['similarity_score'], reverse=True)
+                results = matches_with_scores[:top_k]
             
-            results = cursor.fetchall()
             cursor.close()
             conn.close()
             

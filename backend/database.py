@@ -133,9 +133,11 @@ class DocumentDatabase:
             print("Document PostgreSQL connection closed")
     
     def create_resumes_table(self):
-        """Create resumes table if it doesn't exist"""
+        """Create resumes table and related tables if they don't exist"""
         try:
             cursor = self.connection.cursor()
+            
+            # Create resumes table
             query = """
                 CREATE TABLE IF NOT EXISTS resumes (
                     id SERIAL PRIMARY KEY,
@@ -144,16 +146,31 @@ class DocumentDatabase:
                     file_type VARCHAR(10) NOT NULL,
                     file_uploaded_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ocr_text TEXT,
-                    ocr_processed_time TIMESTAMP
+                    ocr_processed_time TIMESTAMP,
+                    extracted_info JSONB,
+                    extraction_processed_time TIMESTAMP
                 )
             """
             cursor.execute(query)
+            
+            # Create skill_recommendations table
+            query = """
+                CREATE TABLE IF NOT EXISTS skill_recommendations (
+                    id SERIAL PRIMARY KEY,
+                    resume_id INTEGER UNIQUE REFERENCES resumes(id) ON DELETE CASCADE,
+                    recommended_roles JSONB,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+            cursor.execute(query)
+            
             self.connection.commit()
             cursor.close()
-            print("Resumes table created successfully")
+            print("Database tables created successfully")
             return True
         except Error as e:
-            print(f"Error creating resumes table: {e}")
+            print(f"Error creating tables: {e}")
             self.connection.rollback()
             return False
     
