@@ -39,7 +39,8 @@ async function loadRecommendations() {
 
     try {
         const response = await fetch(
-            `${API_BASE}/api/recommend-roles/${currentResumeId}?top_k=5`
+            `${API_BASE}/api/recommend-roles/${currentResumeId}?top_k=5`,
+            { method: 'POST' }
         );
 
         if (!response.ok) {
@@ -78,7 +79,7 @@ function renderRecommendations(data) {
 
 function renderRoleCard(role, index) {
     const rank = index + 1;
-    const matchScore = Math.round((role.match_score || 0) * 100);
+    const matchScore = Math.round(role.match_score || 0);
     const scoreClass =
         matchScore >= 70 ? "high" : matchScore >= 40 ? "mid" : "low";
 

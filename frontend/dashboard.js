@@ -25,8 +25,8 @@ function getCategoryIcon(category) {
 }
 
 function getMatchClass(score) {
-    if (score >= 0.7) return '';
-    if (score >= 0.4) return 'medium';
+    if (score >= 70) return '';
+    if (score >= 40) return 'medium';
     return 'low';
 }
 
@@ -125,8 +125,8 @@ function renderRoleCards(roles, resumeId) {
     rolesGrid.innerHTML = '';
     roles.forEach((role, i) => {
         const icon = getCategoryIcon(role.category);
-        const matchPct = Math.round((role.match_score || 0) * 100);
-        const matchCls = getMatchClass(role.match_score || 0);
+        const matchPct = Math.round(role.match_score || 0);
+        const matchCls = getMatchClass(matchPct);
         const encodedRole = encodeURIComponent(role.role_name);
 
         const card = document.createElement('div');
@@ -142,7 +142,7 @@ function renderRoleCards(roles, resumeId) {
 }
 
 function renderScore(avgScore) {
-    const pct = Math.round(avgScore * 100);
+    const pct = Math.round(avgScore);
     const color = getScoreColor(pct);
 
     // SVG circle params

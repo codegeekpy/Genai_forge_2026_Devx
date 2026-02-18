@@ -15,8 +15,8 @@ function getCategoryIcon(cat) {
 }
 
 function getMatchClass(score) {
-    if (score >= 0.7) return '';
-    if (score >= 0.4) return 'medium';
+    if (score >= 70) return '';
+    if (score >= 40) return 'medium';
     return 'low';
 }
 
@@ -112,8 +112,8 @@ function renderProfile(data) {
     rolesList.innerHTML = '';
     if (data.matched_roles && data.matched_roles.length > 0) {
         data.matched_roles.forEach(r => {
-            const pct = Math.round((r.match_score || 0) * 100);
-            const cls = getMatchClass(r.match_score || 0);
+            const pct = Math.round(r.match_score || 0);
+            const cls = getMatchClass(pct);
             const icon = getCategoryIcon(r.category);
             const item = document.createElement('div');
             item.className = 'role-item';
