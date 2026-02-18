@@ -8,6 +8,7 @@ from course_generator import generate_upskill_course, generate_course_week_detai
 import hashlib
 import json
 import io
+from psycopg2 import extras
 
 app = FastAPI(
     title="Job Application & Resume Management API",
@@ -213,6 +214,94 @@ async def get_user_resumes(user_id: int):
         raise HTTPException(status_code=404, detail="User not found")
     resumes = doc_db.get_user_resumes(user_id)
     return {"user": user, "resumes": resumes}
+
+
+class UpdateProfileRequest(BaseModel):
+    username: str = None
+    email: EmailStr = None
+
+
+@app.get("/api/user/{user_id}/profile", tags=["Profile"], summary="Get Full Profile")
+async def get_user_profile(user_id: int):
+    """
+    Get full profile: user info + latest resume's extracted skills,
+    missing skills, and matched roles.
+    """
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    resumes = doc_db.get_user_resumes(user_id)
+    profile = {
+        "user": user,
+        "resumes": resumes,
+        "skills": [],
+        "missing_skills": [],
+        "matched_roles": [],
+        "latest_resume_id": None
+    }
+
+    if resumes:
+        latest = resumes[0]
+        profile["latest_resume_id"] = latest["id"]
+
+        # Get extracted skills
+        extracted = doc_db.get_extracted_info(latest["id"])
+        if extracted and extracted.get("extracted_info"):
+            info = extracted["extracted_info"]
+            profile["skills"] = info.get("skills", [])
+
+        # Get recommendation data (matched roles + missing skills)
+        try:
+            cursor = doc_db.connection.cursor(cursor_factory=extras.RealDictCursor)
+            cursor.execute(
+                "SELECT recommended_roles FROM skill_recommendations WHERE resume_id = %s",
+                (latest["id"],)
+            )
+            rec_row = cursor.fetchone()
+            cursor.close()
+            if rec_row and rec_row.get("recommended_roles"):
+                rec_data = rec_row["recommended_roles"]
+                recs = rec_data.get("recommendations", []) if isinstance(rec_data, dict) else []
+                profile["matched_roles"] = [
+                    {"role_name": r.get("role_name"), "match_score": r.get("match_score", 0),
+                     "category": r.get("category", "")}
+                    for r in recs[:5]
+                ]
+                all_missing = set()
+                for r in recs[:5]:
+                    all_missing.update(r.get("missing_skills", []))
+                profile["missing_skills"] = list(all_missing)
+        except Exception as e:
+            print(f"[Profile] Could not load recommendations: {e}")
+
+    return profile
+
+
+@app.put("/api/user/{user_id}/profile", tags=["Profile"], summary="Update Profile")
+async def update_user_profile(user_id: int, req: UpdateProfileRequest):
+    """Update username and/or email."""
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    success, message = doc_db.update_user(
+        user_id, username=req.username, email=req.email
+    )
+    if success:
+        updated_user = doc_db.get_user_by_id(user_id)
+        return {"status": "success", "message": message, "user": updated_user}
+    raise HTTPException(status_code=400, detail=message)
+
+
+# ── Resume Ownership Helper ──
+
+def _check_resume_ownership(resume_id: int, user_id: int):
+    """Verify the resume belongs to the given user. Raises 403 if not."""
+    ownership = doc_db.verify_resume_ownership(resume_id, user_id)
+    if ownership is None:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    if not ownership:
+        raise HTTPException(status_code=403, detail="Access denied: this resume does not belong to you")
 
 
 @app.get("/api/options", tags=["Job Application"])
@@ -494,9 +583,12 @@ async def get_all_resumes():
 
 
 @app.delete("/api/resume/{resume_id}", tags=["Resume Management"], summary="Delete Resume")
-async def delete_resume(resume_id: int):
-    """Delete a resume by ID"""
+async def delete_resume(resume_id: int, user_id: int = None):
+    """Delete a resume by ID. Requires user_id for ownership check."""
     try:
+        if user_id is not None:
+            _check_resume_ownership(resume_id, user_id)
+
         success, message = doc_db.delete_resume(resume_id)
         
         if success:

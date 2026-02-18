@@ -232,7 +232,7 @@ class DocumentDatabase:
         try:
             cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
             # Exclude 'file' column to avoid loading large binary data
-            query = "SELECT id, user_name, file_type, file_uploaded_time, ocr_text, ocr_processed_time FROM resumes WHERE id = %s"
+            query = "SELECT id, user_name, user_id, file_type, file_uploaded_time, ocr_text, ocr_processed_time FROM resumes WHERE id = %s"
             cursor.execute(query, (resume_id,))
             result = cursor.fetchone()
             cursor.close()
@@ -406,3 +406,47 @@ class DocumentDatabase:
         except Error as e:
             print(f"Error fetching user resumes: {e}")
             return []
+
+    def verify_resume_ownership(self, resume_id, user_id):
+        """Check if a resume belongs to the given user. Returns True/False."""
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                "SELECT user_id FROM resumes WHERE id = %s", (resume_id,)
+            )
+            row = cursor.fetchone()
+            cursor.close()
+            if not row:
+                return None  # resume not found
+            return row[0] == user_id
+        except Error as e:
+            print(f"Error verifying ownership: {e}")
+            return None
+
+    def update_user(self, user_id, username=None, email=None):
+        """Update user profile fields. Returns (success, message)."""
+        try:
+            sets = []
+            vals = []
+            if username is not None:
+                sets.append("username = %s")
+                vals.append(username)
+            if email is not None:
+                sets.append("email = %s")
+                vals.append(email)
+            if not sets:
+                return False, "Nothing to update"
+            vals.append(user_id)
+            cursor = self.connection.cursor()
+            cursor.execute(
+                f"UPDATE users SET {', '.join(sets)} WHERE id = %s", tuple(vals)
+            )
+            self.connection.commit()
+            cursor.close()
+            return True, "Profile updated"
+        except psycopg2.IntegrityError:
+            self.connection.rollback()
+            return False, "Email already in use"
+        except Error as e:
+            self.connection.rollback()
+            return False, f"Database error: {str(e)}"
