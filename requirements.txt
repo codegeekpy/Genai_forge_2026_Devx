@@ -17,6 +17,9 @@ pgvector>=0.2.0
 # ===== LLM API Client =====
 httpx>=0.25.0
 
+# ===== Course Generation Resources =====
+duckduckgo-search>=7.5.1
+
 # ===== OCR Dependencies (Optional) =====
 # Currently disabled to avoid heavy dependencies
 # Uncomment below if you want to enable OCR functionality

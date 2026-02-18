@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Path Generator - Career Upskilling</title>
+    <link rel="stylesheet" href="course.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🎯 Career Recommendations</h1>
+            <p>Your personalized role matches and learning paths</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-container">
+            <div class="spinner"></div>
+            <p>Analyzing your skills...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-container" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <h2>Something went wrong</h2>
+            <p id="errorMessage"></p>
+            <button onclick="location.reload()" class="retry-btn">Try Again</button>
+        </div>
+
+        <!-- No Resume State -->
+        <div id="noResumeState" class="no-resume-container" style="display: none;">
+            <div class="info-icon">📄</div>
+            <h2>No Resume Found</h2>
+            <p>Please provide a resume ID to get recommendations.</p>
+            <div class="resume-input-group">
+                <input type="number" id="resumeIdInput" placeholder="Enter Resume ID" min="1">
+                <button onclick="loadRecommendations()" class="load-btn">Load Recommendations</button>
+            </div>
+        </div>
+
+        <!-- Skills Summary -->
+        <div id="skillsSummary" class="skills-summary" style="display: none;">
+            <h2>📊 Your Skills Profile</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>✅ Your Skills</h3>
+                    <div id="currentSkillsList" class="skill-tags"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Cards -->
+        <div id="roleCards" class="role-cards-container" style="display: none;">
+            <h2>🏆 Top Role Matches</h2>
+            <div id="roleCardsList" class="role-cards-list"></div>
+        </div>
+    </div>
+
+    <!-- Course Modal / Inline Expansion -->
+    <div id="courseOverlay" class="course-overlay" style="display: none;">
+        <div class="course-modal">
+            <button class="close-modal-btn" onclick="closeCourse()">✕</button>
+            <div id="courseContent"></div>
+        </div>
+    </div>
+
+    <script src="course.js"></script>
+</body>
+
+</html>

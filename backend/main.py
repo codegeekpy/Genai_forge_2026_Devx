@@ -4,7 +4,9 @@ from pydantic import BaseModel, EmailStr, field_validator
 from database import Database, DocumentDatabase
 from ocr_processor import OCRProcessor
 from groq_extractor import GroqLLMExtractor
+from course_generator import generate_upskill_course, generate_course_week_details, generate_course_day_details
 import hashlib
+import json
 import io
 
 app = FastAPI(
@@ -906,4 +908,207 @@ async def get_all_recognized_skills():
         raise HTTPException(
             status_code=500,
             detail=f"Error retrieving skills: {str(e)}"
+        )
+
+
+# ==================== COURSE GENERATION ENDPOINTS ====================
+
+class CourseGenerateRequest(BaseModel):
+    """Request model for generating an upskilling course."""
+    target_role: str
+    resume_id: int | None = None
+    current_skills: list[str] = []
+    missing_skills: list[str] = []
+
+
+class CourseWeekRequest(BaseModel):
+    """Request model for generating week details."""
+    target_role: str
+    week_number: int
+    week_title: str
+    concepts: list[str] = []
+
+
+class CourseDayRequest(BaseModel):
+    """Request model for generating day details."""
+    target_role: str
+    day_title: str
+    day_number: int
+    task_type: str = "theory"
+    duration_minutes: int = 60
+
+
+@app.post("/api/generate-course/{resume_id}", tags=["Course Generation"], summary="Generate Upskilling Course")
+async def generate_course_from_resume(resume_id: int, target_role: str = ""):
+    """
+    Generate a personalized upskilling course based on extracted resume data.
+
+    - **resume_id**: ID of the resume to use for skill assessment
+    - **target_role**: Target role to upskill towards
+
+    Uses extracted skills and RAG missing-skill analysis to create a structured
+    learning pathway with weekly outlines.
+    """
+    try:
+        # Get extracted info from database
+        result = doc_db.get_extracted_info(resume_id)
+
+        if not result or not result.get('extracted_info'):
+            raise HTTPException(
+                status_code=404,
+                detail="No extracted information found. Please run extraction first."
+            )
+
+        extracted_data = result['extracted_info']
+        current_skills = extracted_data.get('skills', [])
+
+        # If no target role specified, use the top recommended role
+        if not target_role and rag_engine:
+            matches = rag_engine.match_skills(current_skills, top_k=1)
+            if matches:
+                target_role = matches[0]['role_name']
+
+        if not target_role:
+            raise HTTPException(
+                status_code=400,
+                detail="Please specify a target_role."
+            )
+
+        # Get missing skills from RAG
+        missing_skills = []
+        if rag_engine:
+            role_details = rag_engine._get_role_details(target_role)
+            if role_details:
+                overlap = rag_engine._calculate_skill_overlap(current_skills, role_details)
+                missing_skills = overlap.get('missing_skills', [])
+
+        # Generate the course
+        course = await generate_upskill_course(
+            current_skills=current_skills,
+            missing_skills=missing_skills,
+            target_role=target_role,
+        )
+
+        return {
+            "status": "success",
+            "resume_id": resume_id,
+            "user_name": result.get('user_name'),
+            "target_role": target_role,
+            "current_skills": current_skills,
+            "missing_skills": missing_skills,
+            "course": course,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating course: {str(e)}"
+        )
+
+
+@app.post("/api/generate-course", tags=["Course Generation"], summary="Generate Course (Direct)")
+async def generate_course_direct(request: CourseGenerateRequest):
+    """
+    Generate a course directly from skills data (without needing a resume_id).
+
+    - **target_role**: Role to upskill towards
+    - **current_skills**: List of current skills
+    - **missing_skills**: List of skills to learn
+
+    If resume_id is provided, skills are automatically loaded from the database.
+    """
+    try:
+        current_skills = request.current_skills
+        missing_skills = request.missing_skills
+        user_name = None
+
+        # If resume_id provided, load skills from DB
+        if request.resume_id:
+            result = doc_db.get_extracted_info(request.resume_id)
+            if result and result.get('extracted_info'):
+                extracted_data = result['extracted_info']
+                current_skills = extracted_data.get('skills', [])
+                user_name = result.get('user_name')
+
+                if rag_engine:
+                    role_details = rag_engine._get_role_details(request.target_role)
+                    if role_details:
+                        overlap = rag_engine._calculate_skill_overlap(current_skills, role_details)
+                        missing_skills = overlap.get('missing_skills', [])
+
+        course = await generate_upskill_course(
+            current_skills=current_skills,
+            missing_skills=missing_skills,
+            target_role=request.target_role,
+        )
+
+        return {
+            "status": "success",
+            "target_role": request.target_role,
+            "current_skills": current_skills,
+            "missing_skills": missing_skills,
+            "user_name": user_name,
+            "course": course,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating course: {str(e)}"
+        )
+
+
+@app.post("/api/generate-course-week", tags=["Course Generation"], summary="Generate Week Details")
+async def generate_week(request: CourseWeekRequest):
+    """
+    Generate a daily breakdown for a specific week.
+
+    - **target_role**: Target role name
+    - **week_number**: Week number (1-based)
+    - **week_title**: Title of the week
+    - **concepts**: List of concepts to cover
+    """
+    try:
+        data = await generate_course_week_details(
+            target_role=request.target_role,
+            week_number=request.week_number,
+            week_title=request.week_title,
+            concepts=request.concepts,
+        )
+        return {"status": "success", **data}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating week details: {str(e)}"
+        )
+
+
+@app.post("/api/generate-course-day", tags=["Course Generation"], summary="Generate Day Details")
+async def generate_day(request: CourseDayRequest):
+    """
+    Generate detailed content and resources for a specific day.
+
+    - **target_role**: Target role name
+    - **day_title**: Title of the day
+    - **day_number**: Day number
+    - **task_type**: Type (theory/practice/project)
+    - **duration_minutes**: Duration in minutes
+
+    Returns learning content with YouTube tutorials and web articles.
+    """
+    try:
+        data = await generate_course_day_details(
+            target_role=request.target_role,
+            day_title=request.day_title,
+            day_number=request.day_number,
+            task_type=request.task_type,
+            duration_minutes=request.duration_minutes,
+        )
+        return {"status": "success", **data}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating day details: {str(e)}"
         )
