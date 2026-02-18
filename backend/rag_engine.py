@@ -481,12 +481,25 @@ class RAGEngine:
             
             # Get details for next roles
             progression_details = []
-            for next_role in next_roles:
-                next_role_details = self._get_role_details(next_role)
+            for next_role_name in next_roles:
+                # Try exact match first
+                next_role_details = self._get_role_details(next_role_name)
+                
+                # If exact match fails, try fuzzy match using the RAG model
+                if not next_role_details:
+                    print(f"[RAG] Exact match failed for '{next_role_name}', trying fuzzy match...")
+                    matches = self.match_skills([next_role_name], top_k=1)
+                    if matches and matches[0]['match_score'] > 60: # Threshold for similarity
+                        matched_name = matches[0]['role_name']
+                        print(f"[RAG] Fuzzy matched '{next_role_name}' to '{matched_name}'")
+                        next_role_details = self._get_role_details(matched_name)
+                        # Update the role name to the matched one for consistency
+                        next_role_name = matched_name
+
                 if next_role_details:
                     overlap = self._calculate_skill_overlap(current_skills, next_role_details)
                     progression_details.append({
-                        'role_name': next_role,
+                        'role_name': next_role_name,
                         'skills_needed': overlap['missing_skills'][:5],
                         'experience_level': next_role_details.get('experience_level', ''),
                         'salary_band': next_role_details.get('salary_band_india', '')
