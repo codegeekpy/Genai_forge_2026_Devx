@@ -60,7 +60,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-container p {
@@ -69,30 +71,35 @@ body {
 }
 
 /* ───── Error / No Resume ───── */
-.error-container, .no-resume-container {
+.error-container,
+.no-resume-container {
     text-align: center;
     padding: 50px 30px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.error-icon, .info-icon {
+.error-icon,
+.info-icon {
     font-size: 3rem;
     margin-bottom: 16px;
 }
 
-.error-container h2, .no-resume-container h2 {
+.error-container h2,
+.no-resume-container h2 {
     color: #fff;
     margin-bottom: 10px;
 }
 
-.error-container p, .no-resume-container p {
+.error-container p,
+.no-resume-container p {
     color: #a0a0c0;
     margin-bottom: 24px;
 }
 
-.retry-btn, .load-btn {
+.retry-btn,
+.load-btn {
     padding: 12px 28px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: #fff;
@@ -104,7 +111,8 @@ body {
     transition: all 0.3s ease;
 }
 
-.retry-btn:hover, .load-btn:hover {
+.retry-btn:hover,
+.load-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
@@ -121,7 +129,7 @@ body {
     padding: 12px 16px;
     border: 2px solid rgba(102, 126, 234, 0.3);
     border-radius: 10px;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     color: #fff;
     font-size: 1rem;
     width: 180px;
@@ -137,9 +145,9 @@ body {
 .skills-summary {
     margin-bottom: 32px;
     padding: 24px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     animation: slideUp 0.5s ease-out;
 }
 
@@ -192,9 +200,9 @@ body {
 }
 
 .role-card {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
     transition: all 0.3s ease;
     animation: slideUp 0.5s ease-out;
@@ -257,9 +265,17 @@ body {
     color: #fff;
 }
 
-.score-high { background: linear-gradient(135deg, #34d399, #059669); }
-.score-mid { background: linear-gradient(135deg, #fbbf24, #d97706); }
-.score-low { background: linear-gradient(135deg, #fb7185, #e11d48); }
+.score-high {
+    background: linear-gradient(135deg, #34d399, #059669);
+}
+
+.score-mid {
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+}
+
+.score-low {
+    background: linear-gradient(135deg, #fb7185, #e11d48);
+}
 
 .score-label {
     font-size: 0.7rem;
@@ -296,7 +312,7 @@ body {
 
 .role-card-footer {
     padding: 16px 24px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -343,7 +359,7 @@ body {
 .generate-course-btn .btn-spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
@@ -373,7 +389,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(6px);
     z-index: 1000;
     display: flex;
@@ -389,7 +405,7 @@ body {
     max-width: 850px;
     background: #1a1a2e;
     border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 32px;
     position: relative;
     animation: slideUp 0.4s ease-out;
@@ -403,8 +419,8 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
     color: #fff;
     font-size: 1.1rem;
     cursor: pointer;
@@ -415,7 +431,7 @@ body {
 }
 
 .close-modal-btn:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* ───── Course Content ───── */
@@ -458,9 +474,9 @@ body {
 }
 
 .week-card {
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     overflow: hidden;
     transition: all 0.3s;
 }
@@ -479,7 +495,7 @@ body {
 }
 
 .week-header:hover {
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .week-header-left {
@@ -523,10 +539,25 @@ body {
     letter-spacing: 0.5px;
 }
 
-.focus-theory { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
-.focus-practice { background: rgba(52, 211, 153, 0.15); color: #34d399; }
-.focus-project { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-.focus-review { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+.focus-theory {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+}
+
+.focus-practice {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+.focus-project {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.focus-review {
+    background: rgba(167, 139, 250, 0.15);
+    color: #a78bfa;
+}
 
 .expand-icon {
     color: #a0a0c0;
@@ -574,15 +605,15 @@ body {
 .day-card {
     padding: 14px 16px;
     margin-bottom: 8px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .day-card:hover {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     border-color: rgba(102, 126, 234, 0.3);
 }
 
@@ -621,7 +652,7 @@ body {
 .day-detail {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: none;
     animation: fadeIn 0.3s ease-out;
 }
@@ -687,15 +718,15 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     text-decoration: none;
     transition: all 0.2s;
 }
 
 .resource-link:hover {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     border-color: rgba(102, 126, 234, 0.3);
 }
 
@@ -704,7 +735,7 @@ body {
     height: 40px;
     border-radius: 6px;
     object-fit: cover;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .resource-info {
@@ -731,23 +762,141 @@ body {
     color: #60a5fa;
 }
 
+/* ───── Career Progression Section ───── */
+.progression-section {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+    animation: fadeIn 0.6s ease-out;
+}
+
+.progression-title {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progression-path {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.progression-node {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+}
+
+.progression-node.current {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.progression-node.next {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.25);
+    border-style: dashed;
+}
+
+.node-label {
+    font-size: 0.7rem;
+    color: #a0a0c0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.node-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.node-salary {
+    font-size: 0.8rem;
+    color: #34d399;
+    font-weight: 600;
+}
+
+.progression-arrow {
+    font-size: 1.5rem;
+    color: #4b5563;
+}
+
+.progression-skills-needed {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.progression-skills-needed strong {
+    display: block;
+    font-size: 0.85rem;
+    color: #fb7185;
+    margin-bottom: 10px;
+}
+
 /* ───── Animations ───── */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ───── Responsive ───── */
 @media (max-width: 600px) {
-    .page-header h1 { font-size: 1.6rem; }
-    .role-card-header { flex-direction: column; }
-    .match-score { flex-direction: row; gap: 12px; }
-    .course-modal { padding: 20px; }
-    .role-card-footer { flex-direction: column; align-items: stretch; }
-    .generate-course-btn { justify-content: center; }
+    .page-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .role-card-header {
+        flex-direction: column;
+    }
+
+    .match-score {
+        flex-direction: row;
+        gap: 12px;
+    }
+
+    .course-modal {
+        padding: 20px;
+    }
+
+    .role-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .generate-course-btn {
+        justify-content: center;
+    }
 }

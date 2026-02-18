@@ -206,5 +206,13 @@ function showSuccessScreen(data) {
         <p><strong>File Type:</strong> ${data.file_type.toUpperCase()}</p>
         <p><strong>Resume ID:</strong> ${data.resume_id}</p>
         <p><strong>Status:</strong> Successfully stored in database</p>
+        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+            <a href="course.html?resume_id=${data.resume_id}" class="action-btn-primary" style="text-decoration: none; text-align: center; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 10px; font-weight: 600;">
+                🎯 View Career Recommendations & Tasks
+            </a>
+            <button onclick="window.location.reload()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #a0a0c0; padding: 10px; border-radius: 8px; cursor: pointer;">
+                Submit Another Resume
+            </button>
+        </div>
     `;
 }

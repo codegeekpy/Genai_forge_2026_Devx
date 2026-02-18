@@ -127,8 +127,8 @@ function renderRoleCard(role, index) {
         <div class="role-card-footer">
             <div class="salary-info">
                 ${salary.min && salary.max
-                    ? `💰 <strong>₹${salary.min} - ₹${salary.max} LPA</strong>`
-                    : ""}
+            ? `💰 <strong>₹${salary.min} - ₹${salary.max} LPA</strong>`
+            : ""}
             </div>
             <button class="generate-course-btn" onclick="generateCourse(${index}, '${escapeAttr(roleName)}')" id="gen-btn-${index}">
                 <span class="btn-text">🎯 Generate Learning Path</span>
@@ -158,6 +158,20 @@ async function generateCourse(index, targetRole) {
         }
 
         const data = await response.json();
+
+        // Fetch career progression separately to enrich the data
+        try {
+            const progResponse = await fetch(`${API_BASE}/api/career-progression/${currentResumeId}`, {
+                method: "POST"
+            });
+            if (progResponse.ok) {
+                const progData = await progResponse.json();
+                data.progression = progData;
+            }
+        } catch (e) {
+            console.warn("Career progression failed to load", e);
+        }
+
         showCourseModal(data, targetRole);
     } catch (error) {
         alert("Error: " + error.message);
@@ -172,6 +186,7 @@ function showCourseModal(data, targetRole) {
     const overlay = document.getElementById("courseOverlay");
     const content = document.getElementById("courseContent");
     const course = data.course || {};
+    const progression = data.progression || null;
 
     content.innerHTML = `
         <div class="course-header">
@@ -181,12 +196,37 @@ function showCourseModal(data, targetRole) {
                 <span class="meta-badge">🎯 ${escapeHtml(targetRole)}</span>
                 <span class="meta-badge">📅 ${course.estimated_weeks || course.weeks?.length || 0} Weeks</span>
                 ${(data.current_skills || []).length > 0
-
-                    ? `<span class="meta-badge">✅ ${data.current_skills.length} Current Skills</span>` : ""}
+            ? `<span class="meta-badge">✅ ${data.current_skills.length} Current Skills</span>` : ""}
                 ${(data.missing_skills || []).length > 0
-                    ? `<span class="meta-badge">📖 ${data.missing_skills.length} Skills to Learn</span>` : ""}
+            ? `<span class="meta-badge">📖 ${data.missing_skills.length} Skills to Learn</span>` : ""}
             </div>
         </div>
+
+        ${progression && progression.next_steps && progression.next_steps.length > 0 ? `
+        <div class="progression-section">
+            <h3 class="progression-title">🚀 Your Career Roadmap: Next Steps</h3>
+            <div class="progression-path">
+                <div class="progression-node current">
+                    <div class="node-label">Current / Target</div>
+                    <div class="node-value">${escapeHtml(progression.current_role || targetRole)}</div>
+                </div>
+                <div class="progression-arrow">→</div>
+                ${progression.next_steps.map(step => `
+                    <div class="progression-node next">
+                        <div class="node-label">Promotion Path</div>
+                        <div class="node-value">${escapeHtml(step.role_name)}</div>
+                        <div class="node-salary">${escapeHtml(step.salary_band)}</div>
+                    </div>
+                `).join('<div class="progression-arrow">→</div>')}
+            </div>
+            <div class="progression-skills-needed">
+                <strong>Skills to master for next level:</strong>
+                <div class="skill-tags">
+                    ${progression.next_steps[0].skills_needed.map(s => `<span class="skill-tag missing">${escapeHtml(s)}</span>`).join("")}
+                </div>
+            </div>
+        </div>
+        ` : ""}
 
         ${course.prerequisites && course.prerequisites.length > 0 ? `
         <div style="margin-bottom: 20px;">
@@ -256,7 +296,7 @@ async function toggleWeek(index, weekTitle, conceptsJson, targetRole) {
 
     try {
         let concepts = [];
-        try { concepts = JSON.parse(conceptsJson); } catch(e) {}
+        try { concepts = JSON.parse(conceptsJson); } catch (e) { }
 
         const response = await fetch(`${API_BASE}/api/generate-course-week`, {
             method: "POST",
