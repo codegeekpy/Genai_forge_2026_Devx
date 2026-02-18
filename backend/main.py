@@ -8,6 +8,7 @@ from course_generator import generate_upskill_course, generate_course_week_detai
 import hashlib
 import json
 import io
+from psycopg2 import extras
 
 app = FastAPI(
     title="Job Application & Resume Management API",
@@ -134,6 +135,175 @@ async def root():
         "docs": "/docs"
     }
 
+
+# ── Authentication Endpoints ──
+
+class SignupRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v):
+        if len(v.strip()) < 2:
+            raise ValueError('Username must be at least 2 characters')
+        return v.strip()
+
+    @field_validator('password')
+    @classmethod
+    def validate_signup_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters')
+        return v
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@app.post("/api/auth/signup", tags=["Authentication"], summary="Create Account")
+async def signup(req: SignupRequest):
+    """Register a new user account."""
+    password_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    success, user_data, message = doc_db.create_user(
+        username=req.username,
+        email=req.email,
+        password_hash=password_hash
+    )
+    if success:
+        return {"status": "success", "message": message, "user": user_data}
+    else:
+        raise HTTPException(status_code=400, detail=message)
+
+
+@app.post("/api/auth/login", tags=["Authentication"], summary="Login")
+async def login(req: LoginRequest):
+    """Authenticate user and return profile + resume status."""
+    user = doc_db.get_user_by_email(req.email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    password_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    if user['password'] != password_hash:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Check if user has resumes (returning user indicator)
+    resumes = doc_db.get_user_resumes(user['id'])
+
+    return {
+        "status": "success",
+        "user": {
+            "id": user['id'],
+            "username": user['username'],
+            "email": user['email'],
+            "created_at": str(user['created_at'])
+        },
+        "has_resumes": len(resumes) > 0,
+        "resume_count": len(resumes),
+        "resumes": resumes
+    }
+
+
+@app.get("/api/user/{user_id}/resumes", tags=["Authentication"], summary="Get User Resumes")
+async def get_user_resumes(user_id: int):
+    """Get all resumes linked to a user."""
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    resumes = doc_db.get_user_resumes(user_id)
+    return {"user": user, "resumes": resumes}
+
+
+class UpdateProfileRequest(BaseModel):
+    username: str = None
+    email: EmailStr = None
+
+
+@app.get("/api/user/{user_id}/profile", tags=["Profile"], summary="Get Full Profile")
+async def get_user_profile(user_id: int):
+    """
+    Get full profile: user info + latest resume's extracted skills,
+    missing skills, and matched roles.
+    """
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    resumes = doc_db.get_user_resumes(user_id)
+    profile = {
+        "user": user,
+        "resumes": resumes,
+        "skills": [],
+        "missing_skills": [],
+        "matched_roles": [],
+        "latest_resume_id": None
+    }
+
+    if resumes:
+        latest = resumes[0]
+        profile["latest_resume_id"] = latest["id"]
+
+        # Get extracted skills
+        extracted = doc_db.get_extracted_info(latest["id"])
+        if extracted and extracted.get("extracted_info"):
+            info = extracted["extracted_info"]
+            profile["skills"] = info.get("skills", [])
+
+        # Get recommendation data (matched roles + missing skills)
+        try:
+            cursor = doc_db.connection.cursor(cursor_factory=extras.RealDictCursor)
+            cursor.execute(
+                "SELECT recommended_roles FROM skill_recommendations WHERE resume_id = %s",
+                (latest["id"],)
+            )
+            rec_row = cursor.fetchone()
+            cursor.close()
+            if rec_row and rec_row.get("recommended_roles"):
+                rec_data = rec_row["recommended_roles"]
+                recs = rec_data.get("recommendations", []) if isinstance(rec_data, dict) else []
+                profile["matched_roles"] = [
+                    {"role_name": r.get("role_name"), "match_score": r.get("match_score", 0),
+                     "category": r.get("category", "")}
+                    for r in recs[:5]
+                ]
+                all_missing = set()
+                for r in recs[:5]:
+                    all_missing.update(r.get("missing_skills", []))
+                profile["missing_skills"] = list(all_missing)
+        except Exception as e:
+            print(f"[Profile] Could not load recommendations: {e}")
+
+    return profile
+
+
+@app.put("/api/user/{user_id}/profile", tags=["Profile"], summary="Update Profile")
+async def update_user_profile(user_id: int, req: UpdateProfileRequest):
+    """Update username and/or email."""
+    user = doc_db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    success, message = doc_db.update_user(
+        user_id, username=req.username, email=req.email
+    )
+    if success:
+        updated_user = doc_db.get_user_by_id(user_id)
+        return {"status": "success", "message": message, "user": updated_user}
+    raise HTTPException(status_code=400, detail=message)
+
+
+# ── Resume Ownership Helper ──
+
+def _check_resume_ownership(resume_id: int, user_id: int):
+    """Verify the resume belongs to the given user. Raises 403 if not."""
+    ownership = doc_db.verify_resume_ownership(resume_id, user_id)
+    if ownership is None:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    if not ownership:
+        raise HTTPException(status_code=403, detail="Access denied: this resume does not belong to you")
+
+
 @app.get("/api/options", tags=["Job Application"])
 async def get_options():
     """Get available job role options for application form"""
@@ -203,13 +373,15 @@ async def delete_applicant(applicant_id: int):
 @app.post("/api/upload-resume", tags=["Resume Management"], summary="Upload Resume with OCR")
 async def upload_resume(
     user_name: str = Form(...),
-    resume: UploadFile = File(...)
+    resume: UploadFile = File(...),
+    user_id: int = Form(None)
 ):
     """
     Upload a resume file and automatically extract text using OCR.
     
     - **user_name**: Name associated with the resume
     - **resume**: PDF or DOCX file (max 10MB)
+    - **user_id**: Optional user ID to link resume to authenticated user
     
     Returns resume ID, OCR status, and text preview.
     """
@@ -251,7 +423,8 @@ async def upload_resume(
             user_name=user_name,
             file_data=file_content,
             file_type=file_extension,
-            ocr_text=ocr_text if ocr_success else None
+            ocr_text=ocr_text if ocr_success else None,
+            user_id=user_id
         )
         
         if success:
@@ -268,6 +441,47 @@ async def upload_resume(
             # Optionally include preview of extracted text
             if ocr_success and ocr_text:
                 response_data["ocr_preview"] = ocr_text[:200] + "..." if len(ocr_text) > 200 else ocr_text
+            
+            # ── Auto AI Extraction ──
+            # If OCR succeeded, automatically extract structured info via Groq
+            if ocr_success and ocr_text:
+                try:
+                    print(f"[API] Auto-extracting structured info for resume {resume_id}...")
+                    ext_success, extracted_data, ext_message = llm_extractor.extract_information(
+                        ocr_text=ocr_text
+                    )
+                    
+                    if ext_success and extracted_data:
+                        # Save extracted data to database
+                        db_ok, db_msg = doc_db.update_extracted_info(
+                            resume_id=resume_id,
+                            extracted_json=extracted_data
+                        )
+                        
+                        if db_ok:
+                            response_data["ai_extracted"] = True
+                            response_data["ai_extraction_message"] = "Structured data extracted automatically"
+                            response_data["extracted_preview"] = {
+                                "name": extracted_data.get("name", ""),
+                                "email": extracted_data.get("email", ""),
+                                "skills_count": len(extracted_data.get("skills", [])),
+                                "experience_count": len(extracted_data.get("experience", [])),
+                            }
+                            print(f"[API] ✅ Auto-extraction complete for resume {resume_id}")
+                        else:
+                            response_data["ai_extracted"] = False
+                            response_data["ai_extraction_message"] = f"Extraction succeeded but save failed: {db_msg}"
+                            print(f"[API] ⚠️ Auto-extraction save failed: {db_msg}")
+                    else:
+                        response_data["ai_extracted"] = False
+                        response_data["ai_extraction_message"] = f"Extraction skipped: {ext_message}"
+                        print(f"[API] ⚠️ Auto-extraction failed: {ext_message}")
+                        
+                except Exception as ext_err:
+                    # Non-fatal: upload still succeeds even if extraction fails
+                    response_data["ai_extracted"] = False
+                    response_data["ai_extraction_message"] = f"Auto-extraction error: {str(ext_err)}"
+                    print(f"[API] ⚠️ Auto-extraction error: {str(ext_err)}")
             
             return response_data
         else:
@@ -369,9 +583,12 @@ async def get_all_resumes():
 
 
 @app.delete("/api/resume/{resume_id}", tags=["Resume Management"], summary="Delete Resume")
-async def delete_resume(resume_id: int):
-    """Delete a resume by ID"""
+async def delete_resume(resume_id: int, user_id: int = None):
+    """Delete a resume by ID. Requires user_id for ownership check."""
     try:
+        if user_id is not None:
+            _check_resume_ownership(resume_id, user_id)
+
         success, message = doc_db.delete_resume(resume_id)
         
         if success:

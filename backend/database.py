@@ -133,15 +133,27 @@ class DocumentDatabase:
             print("Document PostgreSQL connection closed")
     
     def create_resumes_table(self):
-        """Create resumes table and related tables if they don't exist"""
+        """Create users, resumes, and related tables if they don't exist"""
         try:
             cursor = self.connection.cursor()
             
+            # Create users table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             # Create resumes table
-            query = """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS resumes (
                     id SERIAL PRIMARY KEY,
                     user_name VARCHAR(255) NOT NULL,
+                    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
                     file BYTEA NOT NULL,
                     file_type VARCHAR(10) NOT NULL,
                     file_uploaded_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -150,11 +162,19 @@ class DocumentDatabase:
                     extracted_info JSONB,
                     extraction_processed_time TIMESTAMP
                 )
-            """
-            cursor.execute(query)
+            """)
+            
+            # Add user_id column if table already exists without it
+            try:
+                cursor.execute("""
+                    ALTER TABLE resumes ADD COLUMN IF NOT EXISTS
+                    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+                """)
+            except Exception:
+                pass  # Column may already exist
             
             # Create skill_recommendations table
-            query = """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS skill_recommendations (
                     id SERIAL PRIMARY KEY,
                     resume_id INTEGER UNIQUE REFERENCES resumes(id) ON DELETE CASCADE,
@@ -162,30 +182,29 @@ class DocumentDatabase:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            cursor.execute(query)
+            """)
             
             self.connection.commit()
             cursor.close()
-            print("Database tables created successfully")
+            print("Database tables created successfully (users, resumes, skill_recommendations)")
             return True
         except Error as e:
             print(f"Error creating tables: {e}")
             self.connection.rollback()
             return False
     
-    def insert_resume(self, user_name, file_data, file_type, ocr_text=None):
-        """Insert resume into database with optional OCR text"""
+    def insert_resume(self, user_name, file_data, file_type, ocr_text=None, user_id=None):
+        """Insert resume into database with optional OCR text and user linkage"""
         try:
             from datetime import datetime
             cursor = self.connection.cursor()
             query = """
-                INSERT INTO resumes (user_name, file, file_type, ocr_text, ocr_processed_time)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO resumes (user_name, user_id, file, file_type, ocr_text, ocr_processed_time)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
             """
             ocr_time = datetime.now() if ocr_text else None
-            values = (user_name, psycopg2.Binary(file_data), file_type, ocr_text, ocr_time)
+            values = (user_name, user_id, psycopg2.Binary(file_data), file_type, ocr_text, ocr_time)
             cursor.execute(query, values)
             resume_id = cursor.fetchone()[0]
             self.connection.commit()
@@ -213,7 +232,7 @@ class DocumentDatabase:
         try:
             cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
             # Exclude 'file' column to avoid loading large binary data
-            query = "SELECT id, user_name, file_type, file_uploaded_time, ocr_text, ocr_processed_time FROM resumes WHERE id = %s"
+            query = "SELECT id, user_name, user_id, file_type, file_uploaded_time, ocr_text, ocr_processed_time FROM resumes WHERE id = %s"
             cursor.execute(query, (resume_id,))
             result = cursor.fetchone()
             cursor.close()
@@ -315,3 +334,119 @@ class DocumentDatabase:
             print(f"Error retrieving extracted info: {e}")
             return None
 
+    # ── Authentication Methods ──
+
+    def create_user(self, username, email, password_hash):
+        """Create a new user account. Returns (success, user_id_or_none, message)."""
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute("""
+                INSERT INTO users (username, email, password)
+                VALUES (%s, %s, %s)
+                RETURNING id, username, email, created_at
+            """, (username, email, password_hash))
+            row = cursor.fetchone()
+            self.connection.commit()
+            cursor.close()
+            return True, {
+                "id": row[0], "username": row[1],
+                "email": row[2], "created_at": str(row[3])
+            }, "Account created successfully"
+        except psycopg2.IntegrityError:
+            self.connection.rollback()
+            return False, None, "Email already registered"
+        except Error as e:
+            self.connection.rollback()
+            return False, None, f"Database error: {str(e)}"
+
+    def get_user_by_email(self, email):
+        """Look up user by email. Returns dict or None."""
+        try:
+            cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
+            cursor.execute("""
+                SELECT id, username, email, password, created_at
+                FROM users WHERE email = %s
+            """, (email,))
+            user = cursor.fetchone()
+            cursor.close()
+            return dict(user) if user else None
+        except Error as e:
+            print(f"Error looking up user: {e}")
+            return None
+
+    def get_user_by_id(self, user_id):
+        """Look up user by ID. Returns dict or None."""
+        try:
+            cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
+            cursor.execute("""
+                SELECT id, username, email, created_at
+                FROM users WHERE id = %s
+            """, (user_id,))
+            user = cursor.fetchone()
+            cursor.close()
+            return dict(user) if user else None
+        except Error as e:
+            print(f"Error looking up user: {e}")
+            return None
+
+    def get_user_resumes(self, user_id):
+        """Get all resumes linked to a user."""
+        try:
+            cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
+            cursor.execute("""
+                SELECT id, user_name, file_type, file_uploaded_time,
+                       ocr_text IS NOT NULL AS has_ocr,
+                       extracted_info IS NOT NULL AS has_extraction
+                FROM resumes WHERE user_id = %s
+                ORDER BY file_uploaded_time DESC
+            """, (user_id,))
+            rows = cursor.fetchall()
+            cursor.close()
+            return [dict(r) for r in rows]
+        except Error as e:
+            print(f"Error fetching user resumes: {e}")
+            return []
+
+    def verify_resume_ownership(self, resume_id, user_id):
+        """Check if a resume belongs to the given user. Returns True/False."""
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                "SELECT user_id FROM resumes WHERE id = %s", (resume_id,)
+            )
+            row = cursor.fetchone()
+            cursor.close()
+            if not row:
+                return None  # resume not found
+            return row[0] == user_id
+        except Error as e:
+            print(f"Error verifying ownership: {e}")
+            return None
+
+    def update_user(self, user_id, username=None, email=None):
+        """Update user profile fields. Returns (success, message)."""
+        try:
+            sets = []
+            vals = []
+            if username is not None:
+                sets.append("username = %s")
+                vals.append(username)
+            if email is not None:
+                sets.append("email = %s")
+                vals.append(email)
+            if not sets:
+                return False, "Nothing to update"
+            vals.append(user_id)
+            cursor = self.connection.cursor()
+            cursor.execute(
+                f"UPDATE users SET {', '.join(sets)} WHERE id = %s", tuple(vals)
+            )
+            self.connection.commit()
+            cursor.close()
+            return True, "Profile updated"
+        except psycopg2.IntegrityError:
+            self.connection.rollback()
+            return False, "Email already in use"
+        except Error as e:
+            self.connection.rollback()
+            return False, f"Database error: {str(e)}"

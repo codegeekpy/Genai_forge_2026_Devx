@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentForge — My Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <span class="brand-icon">◆</span>
+                <span class="brand-text">TalentForge</span>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="profile.html" class="active">Profile</a>
+                <a href="resume.html">Upload Resume</a>
+                <a href="#" id="logoutLink">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="profile-page">
+        <div class="profile-container">
+
+            <!-- Status Message -->
+            <div id="profileMsg" class="profile-msg"></div>
+
+            <!-- Loading -->
+            <div id="profileLoading" class="profile-loading">
+                <div class="spinner"></div>
+                <p>Loading your profile...</p>
+            </div>
+
+            <!-- Main Content -->
+            <div id="profileContent" style="display:none;">
+
+                <!-- Profile Header -->
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">U</div>
+                    <div class="profile-info">
+                        <h1 id="profileName">—</h1>
+                        <p class="profile-email" id="profileEmail">—</p>
+                        <span class="resume-id-badge" id="resumeIdBadge" style="display:none;"></span>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn-edit" id="btnEdit">✎ Edit Profile</button>
+                        <button class="btn-delete-resume" id="btnDeleteResume">🗑 Delete Resume</button>
+                    </div>
+                </div>
+
+                <!-- Current Skills -->
+                <div class="profile-section">
+                    <h2><span class="sec-icon">✅</span> Current Skills</h2>
+                    <div class="skills-list" id="skillsList"></div>
+                </div>
+
+                <!-- Missing Skills -->
+                <div class="profile-section">
+                    <h2><span class="sec-icon">⚠️</span> Skills to Improve</h2>
+                    <div class="skills-list" id="missingList"></div>
+                </div>
+
+                <!-- Preferred Roles -->
+                <div class="profile-section">
+                    <h2><span class="sec-icon">🎯</span> Preferred Job Roles</h2>
+                    <div class="roles-list" id="rolesList"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Edit Profile Modal -->
+    <div class="edit-overlay" id="editOverlay">
+        <div class="edit-modal">
+            <h2>Edit Profile</h2>
+            <form id="editForm">
+                <div class="form-group">
+                    <label for="editName">Username</label>
+                    <input type="text" id="editName" required minlength="2" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn-save" id="btnSave">Save Changes</button>
+                    <button type="button" class="btn-cancel" id="btnCancelEdit">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="delete-overlay" id="deleteOverlay">
+        <div class="delete-modal">
+            <span class="warn-icon">⚠️</span>
+            <h3>Delete Your Resume?</h3>
+            <p>This will permanently remove your resume and all associated recommendations. This action cannot be
+                undone.</p>
+            <button class="btn-confirm-delete" id="btnConfirmDelete">Yes, Delete</button>
+            <button class="btn-cancel" id="btnCancelDelete">Cancel</button>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <div class="footer-inner">
+            <span>© 2026 TalentForge — AI-Powered Career Recommendations</span>
+        </div>
+    </footer>
+
+    <script src="profile.js"></script>
+</body>
+
+</html>

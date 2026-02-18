@@ -4,68 +4,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Path Generator - Career Upskilling</title>
+    <title>Career Recommendations — TalentForge Recruitment Portal</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="course.css">
 </head>
 
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="page-header">
-            <h1>🎯 Career Recommendations</h1>
-            <p>Your personalized role matches and learning paths</p>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loadingState" class="loading-container">
-            <div class="spinner"></div>
-            <p>Analyzing your skills...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="errorState" class="error-container" style="display: none;">
-            <div class="error-icon">⚠️</div>
-            <h2>Something went wrong</h2>
-            <p id="errorMessage"></p>
-            <button onclick="location.reload()" class="retry-btn">Try Again</button>
-        </div>
-
-        <!-- No Resume State -->
-        <div id="noResumeState" class="no-resume-container" style="display: none;">
-            <div class="info-icon">📄</div>
-            <h2>No Resume Found</h2>
-            <p>Please provide a resume ID to get recommendations.</p>
-            <div class="resume-input-group">
-                <input type="number" id="resumeIdInput" placeholder="Enter Resume ID" min="1">
-                <button onclick="loadRecommendations()" class="load-btn">Load Recommendations</button>
+    <!-- Top Navigation Bar -->
+    <nav class="top-bar">
+        <div class="top-bar-inner">
+            <div class="brand">
+                <span class="brand-icon">&#9670;</span>
+                <span class="brand-name">TalentForge</span>
             </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Apply</a></li>
+                <li><a href="resume.html">Resume</a></li>
+                <li><a href="course.html" class="active">Learning Paths</a></li>
+            </ul>
         </div>
+    </nav>
 
-        <!-- Skills Summary -->
-        <div id="skillsSummary" class="skills-summary" style="display: none;">
-            <h2>📊 Your Skills Profile</h2>
-            <div class="skills-grid">
-                <div class="skill-category">
-                    <h3>✅ Your Skills</h3>
-                    <div id="currentSkillsList" class="skill-tags"></div>
+    <main class="page-body">
+        <div class="container-wide">
+            <div class="page-title-bar">
+                <h1>Career Recommendations</h1>
+                <p>Your personalized role matches and upskilling pathways</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="content-card loading-state">
+                <div class="card-body-padded loading-body">
+                    <div class="loading-spinner"></div>
+                    <p>Analyzing your skill profile...</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Role Cards -->
-        <div id="roleCards" class="role-cards-container" style="display: none;">
-            <h2>🏆 Top Role Matches</h2>
-            <div id="roleCardsList" class="role-cards-list"></div>
-        </div>
-    </div>
+            <!-- Error State -->
+            <div id="errorState" class="content-card" style="display: none;">
+                <div class="card-body-padded error-body">
+                    <div class="status-icon error-icon">!</div>
+                    <h3>Something Went Wrong</h3>
+                    <p id="errorMessage"></p>
+                    <button onclick="location.reload()" class="btn btn-secondary" style="margin-top:16px;">Try
+                        Again</button>
+                </div>
+            </div>
 
-    <!-- Course Modal / Inline Expansion -->
+            <!-- No Resume State -->
+            <div id="noResumeState" class="content-card" style="display: none;">
+                <div class="card-body-padded no-resume-body">
+                    <div class="status-icon info-status-icon">?</div>
+                    <h3>Enter Your Resume ID</h3>
+                    <p>Provide your resume ID to generate career recommendations.</p>
+                    <div class="resume-id-form">
+                        <input type="number" id="resumeIdInput" placeholder="Resume ID" min="1" class="resume-id-input">
+                        <button onclick="loadRecommendations()" class="btn btn-primary">Load Recommendations</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Summary -->
+            <div id="skillsSummary" class="content-card" style="display: none;">
+                <div class="card-header">
+                    <h2>Your Skills Profile</h2>
+                </div>
+                <div class="card-body-padded">
+                    <div id="currentSkillsList" class="skill-tag-list"></div>
+                </div>
+            </div>
+
+            <!-- Role Cards -->
+            <div id="roleCards" style="display: none;">
+                <div class="section-heading">
+                    <h2>Top Matching Roles</h2>
+                    <p>Click "Generate Learning Path" on any role to get a personalized upskilling course</p>
+                </div>
+                <div id="roleCardsList" class="role-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Course Modal -->
     <div id="courseOverlay" class="course-overlay" style="display: none;">
-        <div class="course-modal">
-            <button class="close-modal-btn" onclick="closeCourse()">✕</button>
-            <div id="courseContent"></div>
+        <div class="course-dialog">
+            <div class="course-dialog-header">
+                <h2 id="courseDialogTitle">Learning Path</h2>
+                <button class="close-dialog" onclick="closeCourse()">&times;</button>
+            </div>
+            <div class="course-dialog-body" id="courseContent"></div>
         </div>
     </div>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p>&copy; 2026 TalentForge Recruitment Portal. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script src="course.js"></script>
 </body>

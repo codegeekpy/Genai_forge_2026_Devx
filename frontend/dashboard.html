@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentForge — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <span class="brand-icon">◆</span>
+                <span class="brand-text">TalentForge</span>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="profile.html">Profile</a>
+                <a href="resume.html">Upload Resume</a>
+                <a href="#" id="logoutLink">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dash-page">
+        <div class="dash-container">
+
+            <!-- Welcome Banner -->
+            <div class="dash-welcome">
+                <h1 id="welcomeHeading">Welcome</h1>
+                <p id="welcomeSub">Loading your career dashboard...</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="dashLoading" class="dash-loading">
+                <div class="spinner"></div>
+                <p>Analyzing your profile and matching roles...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="dashError" class="dash-error" style="display:none;">
+                <p id="errorMsg">Could not load dashboard.</p>
+                <a href="dashboard.html" class="btn-primary"
+                    style="text-decoration:none;padding:8px 20px;font-size:0.85rem;">Retry</a>
+            </div>
+
+            <!-- No Resume State -->
+            <div id="noResume" class="no-resume-card" style="display:none;">
+                <h3>No Resume Found</h3>
+                <p>Upload your resume to get personalized career recommendations.</p>
+                <a href="resume.html" class="btn-primary" style="text-decoration:none;padding:10px 28px;">Upload
+                    Resume</a>
+            </div>
+
+            <!-- Main Content (hidden until data loads) -->
+            <div id="dashContent" style="display:none;">
+
+                <!-- Section 1: Top 5 Matched Roles -->
+                <div class="roles-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">🎯</span> Your Top Matched Roles
+                    </h2>
+                    <div class="roles-grid" id="rolesGrid"></div>
+                </div>
+
+                <!-- Bottom Row: Score + Ask AI -->
+                <div class="bottom-row">
+
+                    <!-- Section 2: Resume Ready Score -->
+                    <div class="score-section">
+                        <h3>📈 Resume Ready Score</h3>
+                        <div class="score-circle-wrap">
+                            <svg viewBox="0 0 140 140">
+                                <circle class="score-circle-bg" cx="70" cy="70" r="60" />
+                                <circle class="score-circle-fill" id="scoreCircleFill" cx="70" cy="70" r="60"
+                                    stroke-dasharray="377" stroke-dashoffset="377" />
+                            </svg>
+                            <div class="score-value" id="scoreValue">0<span>%</span></div>
+                        </div>
+                        <p class="score-label" id="scoreLabel">Calculating your readiness...</p>
+                    </div>
+
+                    <!-- Section 3: Ask AI (Coming Soon) -->
+                    <div class="ask-ai-section">
+                        <span class="ai-icon">🧠</span>
+                        <h3>Ask AI <span class="coming-soon-badge">Coming Soon</span></h3>
+                        <p>Your personal AI career assistant — powered by advanced language models.</p>
+                        <ul class="ai-features">
+                            <li>Mock interview preparation</li>
+                            <li>Company-specific drive guidance</li>
+                            <li>Resume improvement suggestions</li>
+                            <li>Personalized career advice</li>
+                        </ul>
+                        <button class="btn-disabled" disabled>Launch AI Assistant</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <div class="footer-inner">
+            <span>© 2026 TalentForge — AI-Powered Career Recommendations</span>
+        </div>
+    </footer>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

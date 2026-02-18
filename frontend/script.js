@@ -17,7 +17,6 @@ async function loadOptions() {
         const response = await fetch(`${API_BASE_URL}/api/options`);
         const data = await response.json();
 
-        // Populate job roles as checkboxes
         data.job_roles.forEach((role, index) => {
             const checkboxItem = document.createElement('div');
             checkboxItem.className = 'checkbox-item';
@@ -32,19 +31,13 @@ async function loadOptions() {
             label.htmlFor = `role_${index}`;
             label.textContent = role;
 
-            // Add checked class on change
             checkbox.addEventListener('change', function () {
-                if (this.checked) {
-                    checkboxItem.classList.add('checked');
-                } else {
-                    checkboxItem.classList.remove('checked');
-                }
+                checkboxItem.classList.toggle('checked', this.checked);
             });
 
             checkboxItem.appendChild(checkbox);
             checkboxItem.appendChild(label);
 
-            // Make the whole div clickable
             checkboxItem.addEventListener('click', function (e) {
                 if (e.target !== checkbox) {
                     checkbox.checked = !checkbox.checked;
@@ -63,29 +56,22 @@ async function loadOptions() {
 // Form submission handler
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    // Clear previous messages and errors
     clearErrors();
     hideMessage();
 
-    // Get selected job roles
-    const selectedRoles = Array.from(document.querySelectorAll('input[name="job_roles"]:checked'))
-        .map(checkbox => checkbox.value);
+    const selectedRoles = Array.from(
+        document.querySelectorAll('input[name="job_roles"]:checked')
+    ).map((cb) => cb.value);
 
-    // Get form data
     const formData = {
         name: document.getElementById('name').value.trim(),
         email: document.getElementById('email').value.trim(),
         password: document.getElementById('password').value,
-        job_roles: selectedRoles
+        job_roles: selectedRoles,
     };
 
-    // Client-side validation
-    if (!validateForm(formData)) {
-        return;
-    }
+    if (!validateForm(formData)) return;
 
-    // Disable submit button and show loading state
     submitBtn.disabled = true;
     submitBtn.classList.add('loading');
     submitBtn.textContent = 'Submitting...';
@@ -93,40 +79,43 @@ form.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/submit`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            showMessage(result.message + ' Redirecting to resume upload...', 'success');
-            // Clear all checked states
-            document.querySelectorAll('.checkbox-item').forEach(item => {
+            showMessage(
+                result.message + ' Redirecting to resume upload...',
+                'success'
+            );
+            document.querySelectorAll('.checkbox-item').forEach((item) => {
                 item.classList.remove('checked');
             });
-
-            // Redirect to resume page after 2 seconds
             setTimeout(() => {
                 window.location.href = 'resume.html';
             }, 2000);
         } else {
-            showMessage(result.detail || 'Submission failed. Please try again.', 'error');
+            showMessage(
+                result.detail || 'Submission failed. Please try again.',
+                'error'
+            );
         }
     } catch (error) {
         console.error('Error submitting form:', error);
-        showMessage('Network error. Please check if the server is running and try again.', 'error');
+        showMessage(
+            'Network error. Please check if the server is running and try again.',
+            'error'
+        );
     } finally {
-        // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
         submitBtn.textContent = 'Submit Application';
     }
 });
 
-// Validation function
+// Validation
 function validateForm(data) {
     let isValid = true;
 
@@ -159,58 +148,39 @@ function validateForm(data) {
     return isValid;
 }
 
-// Email validation helper
 function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Show error message for a field
 function showError(fieldName, message) {
-    const errorElement = document.getElementById(`${fieldName}-error`);
-    const inputElement = document.getElementById(fieldName);
-
-    if (errorElement) {
-        errorElement.textContent = message;
-    }
-
-    if (inputElement) {
-        inputElement.style.borderColor = '#e74c3c';
-    }
+    const errorEl = document.getElementById(`${fieldName}-error`);
+    const inputEl = document.getElementById(fieldName);
+    if (errorEl) errorEl.textContent = message;
+    if (inputEl) inputEl.style.borderColor = '#a8201a';
 }
 
-// Clear all error messages
 function clearErrors() {
-    const errorElements = document.querySelectorAll('.error-message');
-    errorElements.forEach(element => {
-        element.textContent = '';
+    document.querySelectorAll('.error-message').forEach((el) => {
+        el.textContent = '';
     });
-
-    const inputs = document.querySelectorAll('input, select');
-    inputs.forEach(input => {
-        input.style.borderColor = '#e0e0e0';
+    document.querySelectorAll('input, select').forEach((el) => {
+        el.style.borderColor = '';
     });
 }
 
-// Show success/error message
 function showMessage(text, type) {
     messageDiv.textContent = text;
     messageDiv.className = `message ${type}`;
     messageDiv.style.display = 'block';
-
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        hideMessage();
-    }, 5000);
+    setTimeout(hideMessage, 5000);
 }
 
-// Hide message
 function hideMessage() {
     messageDiv.style.display = 'none';
     messageDiv.className = 'message';
 }
 
-// Real-time validation feedback
+// Real-time validation
 document.getElementById('email').addEventListener('blur', function () {
     if (this.value && !isValidEmail(this.value)) {
         showError('email', 'Please enter a valid email address');
@@ -218,39 +188,37 @@ document.getElementById('email').addEventListener('blur', function () {
 });
 
 document.getElementById('password').addEventListener('input', function () {
-    const errorElement = document.getElementById('password-error');
+    const errorEl = document.getElementById('password-error');
     if (this.value.length > 0 && this.value.length < 6) {
-        errorElement.textContent = `${6 - this.value.length} more characters needed`;
+        errorEl.textContent = `${6 - this.value.length} more characters needed`;
     } else {
-        errorElement.textContent = '';
+        errorEl.textContent = '';
     }
 
-    // Check confirm password match when password changes
-    const confirmPassword = document.getElementById('confirm_password');
-    if (confirmPassword.value && confirmPassword.value !== this.value) {
+    const confirm = document.getElementById('confirm_password');
+    const confirmErr = document.getElementById('confirm_password-error');
+    if (confirm.value && confirm.value !== this.value) {
         showError('confirm_password', 'Passwords do not match');
-    } else if (confirmPassword.value === this.value && this.value.length >= 6) {
-        const confirmErrorElement = document.getElementById('confirm_password-error');
-        confirmErrorElement.textContent = '✓ Passwords match';
-        confirmErrorElement.style.color = '#4caf50';
-        confirmPassword.style.borderColor = '#4caf50';
+    } else if (confirm.value === this.value && this.value.length >= 6) {
+        confirmErr.textContent = '✓ Passwords match';
+        confirmErr.style.color = '#1a7a3a';
+        confirm.style.borderColor = '#1a7a3a';
     }
 });
 
-// Real-time validation for confirm password
 document.getElementById('confirm_password').addEventListener('input', function () {
     const password = document.getElementById('password').value;
-    const errorElement = document.getElementById('confirm_password-error');
+    const errorEl = document.getElementById('confirm_password-error');
 
     if (this.value && this.value !== password) {
         showError('confirm_password', 'Passwords do not match');
     } else if (this.value === password && this.value.length >= 6) {
-        errorElement.textContent = '✓ Passwords match';
-        errorElement.style.color = '#4caf50';
-        this.style.borderColor = '#4caf50';
+        errorEl.textContent = '✓ Passwords match';
+        errorEl.style.color = '#1a7a3a';
+        this.style.borderColor = '#1a7a3a';
     } else {
-        errorElement.textContent = '';
-        errorElement.style.color = '#e74c3c';
-        this.style.borderColor = '#e0e0e0';
+        errorEl.textContent = '';
+        errorEl.style.color = '#a8201a';
+        this.style.borderColor = '';
     }
 });
