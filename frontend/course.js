@@ -75,6 +75,12 @@ function renderRecommendations(data) {
         .map((role, i) => renderRoleCard(role, i))
         .join("");
     document.getElementById("roleCards").style.display = "block";
+
+    // Update Builder Link
+    const builderLink = document.getElementById("builderLink");
+    if (builderLink && currentResumeId) {
+        builderLink.href = `resume-builder.html?resume_id=${currentResumeId}`;
+    }
 }
 
 function renderRoleCard(role, index) {
@@ -174,6 +180,12 @@ function showCourseDialog(data, targetRole) {
     const course = data.course || {};
 
     title.textContent = course.title || `Learning Path: ${targetRole}`;
+
+    // Update Builder Link in Modal
+    const modalBtn = document.getElementById("modalBuilderBtn");
+    if (modalBtn && currentResumeId) {
+        modalBtn.href = `resume-builder.html?resume_id=${currentResumeId}`;
+    }
 
     content.innerHTML = `
         <p class="course-desc">${esc(course.description || "")}</p>

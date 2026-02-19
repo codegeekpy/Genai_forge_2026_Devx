@@ -26,12 +26,14 @@ const state = {
 // ═══ INIT ═══
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth guard
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
+    // Auth guardian
+    const userData = localStorage.getItem('tf_user');
+    if (!userData) {
         window.location.href = 'auth.html';
         return;
     }
+    const user = JSON.parse(userData);
+    const userId = user.id;
 
     bindAccordions();
     bindTemplateBar();

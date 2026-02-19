@@ -57,9 +57,14 @@
             <!-- No Resume State -->
             <div id="noResume" class="no-resume-card" style="display:none;">
                 <h3>No Resume Found</h3>
-                <p>Upload your resume to get personalized career recommendations.</p>
-                <a href="resume.html" class="btn-primary" style="text-decoration:none;padding:10px 28px;">Upload
-                    Resume</a>
+                <p>Upload your resume or build a professional one from scratch.</p>
+                <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
+                    <a href="resume.html" class="btn-primary" style="text-decoration:none; padding:10px 28px;">Upload
+                        Resume</a>
+                    <a href="resume-builder.html" class="btn-secondary"
+                        style="text-decoration:none; padding:10px 28px; background:#0d2137; color:white; border:none; border-radius:6px; font-family:'Source Sans Pro',sans-serif; font-weight:600;">Build
+                        Resume</a>
+                </div>
             </div>
 
             <!-- Main Content (hidden until data loads) -->
@@ -102,6 +107,22 @@
                             <li>Personalized career advice</li>
                         </ul>
                         <button class="btn-disabled" disabled>Launch AI Assistant</button>
+                    </div>
+
+                    <!-- New: Resume Builder CTA -->
+                    <div class="builder-cta-section"
+                        style="grid-column: 1 / -1; background: white; border-radius: 12px; padding: 24px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(14, 107, 94, 0.1); margin-top: 20px;">
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <div style="font-size:2rem;">🖋️</div>
+                            <div>
+                                <h3 style="margin:0; font-family:'Merriweather',serif; color:#0d2137;">Resum&eacute;
+                                    Builder</h3>
+                                <p style="margin:4px 0 0; color:#5a6f80; font-size:0.9rem;">Turn your skills into a
+                                    professional, ATS-optimized PDF or DOCX resume.</p>
+                            </div>
+                        </div>
+                        <a href="resume-builder.html" class="btn-primary"
+                            style="text-decoration:none; padding:10px 24px;">Start Building &rarr;</a>
                     </div>
 
                 </div>
