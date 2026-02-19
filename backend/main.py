@@ -147,6 +147,7 @@ class SignupRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+    job_roles: list[str] = []
 
     @field_validator('username')
     @classmethod
@@ -162,6 +163,10 @@ class SignupRequest(BaseModel):
             raise ValueError('Password must be at least 6 characters')
         return v
 
+class SaveResumeRequest(BaseModel):
+    user_id: int
+    data: ResumeBuilderData
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -170,12 +175,13 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/auth/signup", tags=["Authentication"], summary="Create Account")
 async def signup(req: SignupRequest):
-    """Register a new user account."""
+    """Register a new user account with preferred roles."""
     password_hash = hashlib.sha256(req.password.encode()).hexdigest()
     success, user_data, message = doc_db.create_user(
         username=req.username,
         email=req.email,
-        password_hash=password_hash
+        password_hash=password_hash,
+        job_roles=req.job_roles
     )
     if success:
         return {"status": "success", "message": message, "user": user_data}
@@ -472,6 +478,33 @@ async def upload_resume(
                                 "skills_count": len(extracted_data.get("skills", [])),
                                 "experience_count": len(extracted_data.get("experience", [])),
                             }
+                            # ── Auto Recommendation ──
+                            if rag_engine:
+                                try:
+                                    print(f"[API] Auto-generating recommendations for resume {resume_id}...")
+                                    recommendations = rag_engine.recommend_roles(
+                                        extracted_data=extracted_data,
+                                        top_k=5
+                                    )
+                                    
+                                    # Save to database
+                                    cursor = doc_db.connection.cursor()
+                                    cursor.execute("""
+                                        INSERT INTO skill_recommendations (resume_id, recommended_roles, created_at)
+                                        VALUES (%s, %s, CURRENT_TIMESTAMP)
+                                        ON CONFLICT (resume_id) DO UPDATE
+                                        SET recommended_roles = EXCLUDED.recommended_roles,
+                                            updated_at = CURRENT_TIMESTAMP
+                                    """, (resume_id, json.dumps(recommendations)))
+                                    doc_db.connection.commit()
+                                    cursor.close()
+                                    
+                                    response_data["recommendations_generated"] = True
+                                    print(f"[API] ✅ Auto-recommendations complete for resume {resume_id}")
+                                except Exception as rec_err:
+                                    print(f"[API] ⚠️ Auto-recommendation failed: {str(rec_err)}")
+                                    response_data["recommendations_generated"] = False
+                            
                             print(f"[API] ✅ Auto-extraction complete for resume {resume_id}")
                         else:
                             response_data["ai_extracted"] = False
@@ -1395,22 +1428,23 @@ async def resume_builder_prefill(resume_id: int):
     Allows users to go from 'Upload Resume' → 'Build a Better Resume' with pre-filled data.
     """
     try:
+        # Get metadata
         result = doc_db.get_extracted_info(resume_id)
         if not result:
             raise HTTPException(status_code=404, detail=f"Resume {resume_id} not found")
-
+        
         extracted_info = result.get('extracted_info')
         user_name = result.get('user_name', '')
-
+        
         if not extracted_info:
-            # No extraction yet — return basic data
             return {
                 "status": "partial",
                 "message": "No extracted data available. Form will have minimal pre-fill.",
                 "data": transform_extracted_to_builder({}, user_name)
             }
-
+            
         builder_data = transform_extracted_to_builder(extracted_info, user_name)
+        
         return {
             "status": "success",
             "message": "Resume data pre-filled from extraction",
@@ -1419,4 +1453,77 @@ async def resume_builder_prefill(resume_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Pre-fill error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/resume-builder/save", tags=["Resume Builder"], summary="Save Built Resume to Profile")
+async def resume_builder_save(req: SaveResumeRequest):
+    """
+    Persist a built resume to the user's profile and trigger recommendations.
+    """
+    try:
+        # 1. Generate PDF bytes to store as the 'file'
+        builder_dict = req.data.dict()
+        pdf_bytes = generate_pdf(builder_dict)
+        
+        # 2. Re-format for recommendations
+        extracted_data = {
+            "name": builder_dict['personal'].get('fullName', ''),
+            "email": builder_dict['personal'].get('email', ''),
+            "phone": builder_dict['personal'].get('phone', ''),
+            "skills": builder_dict.get('skills', []),
+            "experience": [
+                {
+                    "title": exp.get('title', ''),
+                    "company": exp.get('company', ''),
+                    "duration": exp.get('date', ''),
+                    "responsibilities": exp.get('description', '')
+                } for exp in builder_dict.get('experience', [])
+            ],
+            "education": [
+                {
+                    "degree": edu.get('degree', ''),
+                    "institution": edu.get('school', ''),
+                    "year": edu.get('date', '')
+                } for edu in builder_dict.get('education', [])
+            ]
+        }
+        
+        # 3. Insert into resumes table
+        success, resume_id, message = doc_db.insert_resume(
+            user_name=extracted_data["name"],
+            file_data=pdf_bytes,
+            file_type="application/pdf",
+            ocr_text=f"Built via TalentForge Resume Builder\n\n{json.dumps(builder_dict)}",
+            user_id=req.user_id
+        )
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Failed to save resume: {message}")
+            
+        # 4. Save extracted info
+        doc_db.update_extracted_info(resume_id, extracted_data)
+        
+        # 5. Trigger recommendations
+        if rag_engine:
+            recommendations = rag_engine.recommend_roles(extracted_data)
+            cursor = doc_db.connection.cursor()
+            cursor.execute("""
+                INSERT INTO skill_recommendations (resume_id, recommended_roles, created_at)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (resume_id) DO UPDATE
+                SET recommended_roles = EXCLUDED.recommended_roles,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (resume_id, json.dumps(recommendations)))
+            doc_db.connection.commit()
+            cursor.close()
+            
+        return {
+            "status": "success",
+            "resume_id": resume_id,
+            "message": "Resume saved to profile and recommendations updated"
+        }
+        
+    except Exception as e:
+        print(f"[API] Save error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

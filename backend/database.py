@@ -144,9 +144,16 @@ class DocumentDatabase:
                     username VARCHAR(100) NOT NULL,
                     email VARCHAR(255) UNIQUE NOT NULL,
                     password VARCHAR(255) NOT NULL,
+                    job_roles JSONB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            
+            # Add job_roles column if table already exists without it
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS job_roles JSONB")
+            except Exception:
+                pass
             
             # Create resumes table
             cursor.execute("""
@@ -336,21 +343,27 @@ class DocumentDatabase:
 
     # ── Authentication Methods ──
 
-    def create_user(self, username, email, password_hash):
+    def create_user(self, username, email, password_hash, job_roles=None):
         """Create a new user account. Returns (success, user_id_or_none, message)."""
         try:
+            import json
             cursor = self.connection.cursor()
+            job_roles_json = json.dumps(job_roles) if job_roles else None
+            
             cursor.execute("""
-                INSERT INTO users (username, email, password)
-                VALUES (%s, %s, %s)
-                RETURNING id, username, email, created_at
-            """, (username, email, password_hash))
+                INSERT INTO users (username, email, password, job_roles)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, username, email, created_at, job_roles
+            """, (username, email, password_hash, job_roles_json))
             row = cursor.fetchone()
             self.connection.commit()
             cursor.close()
+            
+            parsed_roles = row[4] if row[4] else []
             return True, {
                 "id": row[0], "username": row[1],
-                "email": row[2], "created_at": str(row[3])
+                "email": row[2], "created_at": str(row[3]),
+                "job_roles": parsed_roles
             }, "Account created successfully"
         except psycopg2.IntegrityError:
             self.connection.rollback()
@@ -364,7 +377,7 @@ class DocumentDatabase:
         try:
             cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
             cursor.execute("""
-                SELECT id, username, email, password, created_at
+                SELECT id, username, email, password, job_roles, created_at
                 FROM users WHERE email = %s
             """, (email,))
             user = cursor.fetchone()
@@ -379,7 +392,7 @@ class DocumentDatabase:
         try:
             cursor = self.connection.cursor(cursor_factory=extras.RealDictCursor)
             cursor.execute("""
-                SELECT id, username, email, created_at
+                SELECT id, username, email, job_roles, created_at
                 FROM users WHERE id = %s
             """, (user_id,))
             user = cursor.fetchone()
