@@ -273,7 +273,7 @@ class RAGEngine:
             # Convert to match percentage (0-100)
             matches = []
             for result in results:
-                match_percentage = round(result['similarity_score'] * 100, 2)
+                match_percentage = int(round(result['similarity_score'] * 100))
                 matches.append({
                     'role_name': result['role_name'],
                     'category': result['category'],
