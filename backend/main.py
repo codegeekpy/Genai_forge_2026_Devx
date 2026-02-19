@@ -5,6 +5,11 @@ from database import Database, DocumentDatabase
 from ocr_processor import OCRProcessor
 from groq_extractor import GroqLLMExtractor
 from course_generator import generate_upskill_course, generate_course_week_details, generate_course_day_details
+from resume_builder import (
+    generate_pdf, generate_docx, ai_optimize_text, ai_generate_summary,
+    transform_extracted_to_builder, ResumeBuilderData, TextOptimizeRequest
+)
+from fastapi.responses import Response, StreamingResponse
 import hashlib
 import json
 import io
@@ -1329,3 +1334,89 @@ async def generate_day(request: CourseDayRequest):
             status_code=500,
             detail=f"Error generating day details: {str(e)}"
         )
+
+
+# ══════════════════════════════════════════════════════════════
+#  RESUME BUILDER ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+@app.post("/api/resume-builder/generate-pdf", tags=["Resume Builder"], summary="Generate PDF Resume")
+async def resume_builder_pdf(data: ResumeBuilderData):
+    """Generate a styled PDF resume from the builder form data."""
+    try:
+        pdf_bytes = generate_pdf(data.dict())
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=resume.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
+@app.post("/api/resume-builder/generate-docx", tags=["Resume Builder"], summary="Generate DOCX Resume")
+async def resume_builder_docx(data: ResumeBuilderData):
+    """Generate a styled DOCX resume from the builder form data."""
+    try:
+        docx_stream = generate_docx(data.dict())
+        return StreamingResponse(
+            docx_stream,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": "attachment; filename=resume.docx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DOCX generation failed: {str(e)}")
+
+
+@app.post("/api/resume-builder/ai-optimize", tags=["Resume Builder"], summary="AI Polish Text")
+async def resume_builder_optimize(request: TextOptimizeRequest):
+    """Polish and improve text using Groq AI for resume usage."""
+    try:
+        optimized = ai_optimize_text(request.text)
+        return {"optimized_text": optimized}
+    except Exception as e:
+        return {"optimized_text": request.text, "error": str(e)}
+
+
+@app.post("/api/resume-builder/ai-summary", tags=["Resume Builder"], summary="AI Generate Summary")
+async def resume_builder_summary(data: ResumeBuilderData):
+    """Auto-generate a professional resume summary from resume data."""
+    try:
+        summary = ai_generate_summary(data.dict())
+        return {"summary": summary}
+    except Exception as e:
+        return {"summary": "", "error": str(e)}
+
+
+@app.get("/api/resume-builder/prefill/{resume_id}", tags=["Resume Builder"], summary="Pre-fill from Extracted Data")
+async def resume_builder_prefill(resume_id: int):
+    """
+    Convert extracted resume information into resume builder format.
+    Allows users to go from 'Upload Resume' → 'Build a Better Resume' with pre-filled data.
+    """
+    try:
+        result = doc_db.get_extracted_info(resume_id)
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Resume {resume_id} not found")
+
+        extracted_info = result.get('extracted_info')
+        user_name = result.get('user_name', '')
+
+        if not extracted_info:
+            # No extraction yet — return basic data
+            return {
+                "status": "partial",
+                "message": "No extracted data available. Form will have minimal pre-fill.",
+                "data": transform_extracted_to_builder({}, user_name)
+            }
+
+        builder_data = transform_extracted_to_builder(extracted_info, user_name)
+        return {
+            "status": "success",
+            "message": "Resume data pre-filled from extraction",
+            "data": builder_data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pre-fill error: {str(e)}")

@@ -66,9 +66,7 @@ function showChoiceScreen() {
 }
 
 function showCreateResumeMessage() {
-    alert(
-        'Resume creation feature coming soon! For now, please use the "I Have My Resume" option.'
-    );
+    window.location.href = 'resume-builder.html';
 }
 
 function handleFileSelect(e) {
